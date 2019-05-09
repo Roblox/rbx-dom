@@ -7,9 +7,14 @@ use log::trace;
 
 use rbx_dom_weak::{RbxInstanceProperties, RbxTree};
 
-static MODEL_A: &[u8] = include_bytes!("../test-files/model-a.rbxm");
-static MODEL_B: &[u8] = include_bytes!("../test-files/model-b.rbxm");
-static MODEL_C: &[u8] = include_bytes!("../test-files/model-c.rbxm");
+static MODELS: &[&[u8]] = &[
+    include_bytes!("../test-files/model-a.rbxm"),
+    include_bytes!("../test-files/model-b.rbxm"),
+    include_bytes!("../test-files/model-c.rbxm"),
+
+    // https://github.com/LPGhatguy/rbx-dom/issues/49
+    // include_bytes!("../test-files/Baseplate.rbxl"),
+];
 
 fn new_test_tree() -> RbxTree {
     let root = RbxInstanceProperties {
@@ -25,7 +30,7 @@ fn new_test_tree() -> RbxTree {
 fn round_trip() {
     let _ = env_logger::try_init();
 
-    for model_source in &[MODEL_A, MODEL_B, MODEL_C] {
+    for model_source in MODELS {
         let mut tree = new_test_tree();
         let root_id = tree.get_root_id();
 
