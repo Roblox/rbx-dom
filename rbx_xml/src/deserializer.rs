@@ -110,12 +110,23 @@ struct IdPropertyRewrite {
     pub referent_value: String,
 }
 
+struct SharedStringPropertyRewrite {
+    pub id: RbxId,
+    pub property_name: String,
+    pub shared_string_hash: String,
+}
+
 /// The state needed to deserialize an XML model into an `RbxTree`.
 pub struct ParseState<'a> {
     options: DecodeOptions,
-    referents: HashMap<String, RbxId>,
     metadata: HashMap<String, String>,
+
+    referents: HashMap<String, RbxId>,
     rewrite_ids: Vec<IdPropertyRewrite>,
+
+    shared_strings: HashMap<String, Vec<u8>>,
+    shared_string_rewrites: Vec<SharedStringPropertyRewrite>,
+
     tree: &'a mut RbxTree,
 }
 
@@ -123,9 +134,11 @@ impl<'a> ParseState<'a> {
     fn new(tree: &mut RbxTree, options: DecodeOptions) -> ParseState {
         ParseState {
             options,
-            referents: HashMap::new(),
             metadata: HashMap::new(),
+            referents: HashMap::new(),
             rewrite_ids: Vec::new(),
+            shared_strings: HashMap::new(),
+            shared_string_rewrites: Vec::new(),
             tree,
         }
     }
@@ -203,6 +216,9 @@ fn deserialize_root<R: Read>(
                     "Meta" => {
                         deserialize_metadata(reader, state)?;
                     }
+                    "SharedStrings" => {
+                        deserialize_shared_string_dict(reader, state)?;
+                    }
                     _ => {
                         let event = reader.expect_next().unwrap();
                         return Err(reader.error(DecodeErrorKind::UnexpectedXmlEvent(event)));
@@ -249,6 +265,70 @@ fn deserialize_metadata<R: Read>(reader: &mut XmlEventReader<R>, state: &mut Par
     reader.expect_end_with_name("Meta")?;
 
     state.metadata.insert(name, value);
+    Ok(())
+}
+
+fn deserialize_shared_string_dict<R: Read>(
+    reader: &mut XmlEventReader<R>,
+    state: &mut ParseState,
+) -> Result<(), NewDecodeError> {
+    reader.expect_start_with_name("SharedStrings")?;
+
+    loop {
+        match reader.expect_peek()? {
+            XmlReadEvent::StartElement { name, .. } => {
+                if name.local_name == "SharedString" {
+                    deserialize_shared_string(reader, state)?;
+                } else {
+                    let event = reader.expect_next().unwrap();
+                    return Err(reader.error(DecodeErrorKind::UnexpectedXmlEvent(event)));
+                }
+            }
+            XmlReadEvent::EndElement { name } => {
+                if name.local_name == "SharedStrings" {
+                    break;
+                } else {
+                    let event = reader.expect_next().unwrap();
+                    return Err(reader.error(DecodeErrorKind::UnexpectedXmlEvent(event)));
+                }
+            }
+            _ => {
+                let event = reader.expect_next().unwrap();
+                return Err(reader.error(DecodeErrorKind::UnexpectedXmlEvent(event)));
+            }
+        }
+    }
+
+    reader.expect_end_with_name("SharedStrings")?;
+    Ok(())
+}
+
+fn deserialize_shared_string<R: Read>(
+    reader: &mut XmlEventReader<R>,
+    state: &mut ParseState,
+) -> Result<(), NewDecodeError> {
+    let attributes = reader.expect_start_with_name("SharedString")?;
+
+    let mut md5_hash = None;
+    for attribute in attributes.into_iter() {
+        if attribute.name.local_name == "md5" {
+            md5_hash = Some(attribute.value);
+            break;
+        }
+    }
+
+    let md5_hash = md5_hash
+        .ok_or_else(|| reader.error(DecodeErrorKind::MissingAttribute("md5")))?;
+
+    let encoded_value = reader.read_characters()?
+        .replace("\n", "");
+
+    let value = base64::decode(&encoded_value)
+        .map_err(|e| reader.error(e))?;
+
+    state.shared_strings.insert(md5_hash, value);
+
+    reader.expect_end_with_name("SharedString")?;
     Ok(())
 }
 
