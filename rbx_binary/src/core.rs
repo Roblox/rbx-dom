@@ -4,6 +4,7 @@ use std::{
 };
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use rbx_dom_weak::RbxValue;
 use rbx_reflection::RbxPropertyDescriptor;
 
 pub static FILE_MAGIC_HEADER: &[u8] = b"<roblox!";
@@ -138,24 +139,25 @@ pub fn find_canonical_property_descriptor(
     class_name: &str,
     property_name: &str,
 ) -> Option<&'static RbxPropertyDescriptor> {
-    find_property_descriptors(class_name, property_name).map(|(canonical, _serialized)| canonical)
+    find_property_descriptors(class_name, property_name).map(|(canonical, _, _)| canonical)
 }
 
 pub fn find_serialized_property_descriptor(
     class_name: &str,
     property_name: &str,
 ) -> Option<&'static RbxPropertyDescriptor> {
-    find_property_descriptors(class_name, property_name).map(|(_canonical, serialized)| serialized)
+    find_property_descriptors(class_name, property_name).map(|(_, serialized, _)| serialized)
 }
 
 /// Find both the canonical and serialized property descriptors for a given
 /// class and property name pair. These might be the same descriptor!
-fn find_property_descriptors(
+pub fn find_property_descriptors(
     class_name: &str,
     property_name: &str,
 ) -> Option<(
     &'static RbxPropertyDescriptor,
     &'static RbxPropertyDescriptor,
+    Option<&'static RbxValue>,
 )> {
     let class_descriptor = rbx_reflection::get_class_descriptor(class_name)?;
 
@@ -185,7 +187,10 @@ fn find_property_descriptors(
                     })
                     .unwrap_or(property_descriptor);
 
-                return Some((property_descriptor, serialized_descriptor));
+                let default_value =
+                    current_class_descriptor.get_default_value(property_descriptor.name());
+
+                return Some((property_descriptor, serialized_descriptor, default_value));
             }
 
             if let Some(canonical_name) = property_descriptor.canonical_name() {
@@ -205,7 +210,9 @@ fn find_property_descriptors(
                     })
                     .unwrap_or(canonical_descriptor);
 
-                return Some((canonical_descriptor, serialized_descriptor));
+                let default_value = class_descriptor.get_default_value(canonical_descriptor.name());
+
+                return Some((canonical_descriptor, serialized_descriptor, default_value));
             } else {
                 // This property doesn't have a canonical form, we we'll skip
                 // serializing it by declaring there isn't a canonical property

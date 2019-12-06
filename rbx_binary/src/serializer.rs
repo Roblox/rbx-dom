@@ -13,8 +13,7 @@ use snafu::Snafu;
 use crate::{
     chunk::{ChunkBuilder, Compression},
     core::{
-        find_serialized_property_descriptor, RbxWriteExt, FILE_MAGIC_HEADER, FILE_SIGNATURE,
-        FILE_VERSION,
+        find_property_descriptors, RbxWriteExt, FILE_MAGIC_HEADER, FILE_SIGNATURE, FILE_VERSION,
     },
     types::Type,
 };
@@ -115,7 +114,7 @@ struct TypeInfo {
 #[derive(Debug)]
 struct PropInfo {
     prop_type: Type,
-    // TODO: Should we store the default value for this descriptor here?
+    default_value: Cow<'static, RbxValue>,
 }
 
 impl<'a, W: Write> BinarySerializer<'a, W> {
@@ -156,11 +155,12 @@ impl<'a, W: Write> BinarySerializer<'a, W> {
         for (prop_name, prop_value) in &instance.properties {
             let ser_name;
             let ser_rbx_type;
+            let mut ser_default_value = None;
 
-            match find_serialized_property_descriptor(&instance.class_name, prop_name) {
-                Some(descriptor) => {
-                    ser_name = descriptor.name();
-                    ser_rbx_type = match descriptor.property_type() {
+            match find_property_descriptors(&instance.class_name, prop_name) {
+                Some((_canon_descriptor, ser_descriptor, ser_default)) => {
+                    ser_name = ser_descriptor.name();
+                    ser_rbx_type = match ser_descriptor.property_type() {
                         RbxPropertyTypeDescriptor::Data(ty) => *ty,
                         RbxPropertyTypeDescriptor::Enum(_) => RbxValueType::Enum,
                         RbxPropertyTypeDescriptor::UnimplementedType(name) => {
@@ -170,6 +170,7 @@ impl<'a, W: Write> BinarySerializer<'a, W> {
                             return;
                         }
                     };
+                    ser_default_value = ser_default;
                 }
                 None => {
                     ser_name = prop_name.as_str();
@@ -179,11 +180,22 @@ impl<'a, W: Write> BinarySerializer<'a, W> {
 
             let ser_type = Type::from_rbx_type(ser_rbx_type).unwrap();
 
+            let ser_default_value = ser_default_value.map(Cow::Borrowed).unwrap_or_else(|| {
+                Cow::Owned(match ser_type {
+                    Type::String => RbxValue::String {
+                        value: "".to_owned(),
+                    },
+                    Type::Bool => RbxValue::Bool { value: false },
+                    _ => unimplemented!(),
+                })
+            });
+
             if !type_info.properties.contains_key(ser_name) {
                 type_info.properties.insert(
                     ser_name.to_owned(),
                     PropInfo {
                         prop_type: ser_type,
+                        default_value: ser_default_value,
                     },
                 );
             }
@@ -216,6 +228,9 @@ impl<'a, W: Write> BinarySerializer<'a, W> {
                 "Name".to_owned(),
                 PropInfo {
                     prop_type: Type::String,
+                    default_value: Cow::Owned(RbxValue::String {
+                        value: "".to_owned(),
+                    }),
                 },
             );
 
