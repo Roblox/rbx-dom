@@ -1,7 +1,7 @@
 [package]
 name = "rbx_dom_weak"
 description = "Weakly-typed Roblox DOM implementation for Rust"
-version = "1.10.1"
+version = "2.0.0-dev"
 license = "MIT"
 documentation = "https://docs.rs/rbx_dom_weak"
 homepage = "https://github.com/rojo-rbx/rbx-dom"
