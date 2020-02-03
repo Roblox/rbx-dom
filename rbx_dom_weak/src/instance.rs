@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use rbx_types::{Ref, Variant};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 /// The properties associated with a Roblox Instance that might not exist yet.
 ///

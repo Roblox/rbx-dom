@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use rbx_types::Ref;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::instance::{RbxInstance, RbxInstanceProperties};
 
