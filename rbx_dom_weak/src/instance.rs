@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
+use rbx_types::{Ref, Variant};
 use serde_derive::{Deserialize, Serialize};
-
-use crate::{id::RbxId, value::RbxValue};
 
 /// The properties associated with a Roblox Instance that might not exist yet.
 ///
@@ -24,7 +23,7 @@ pub struct RbxInstanceProperties {
     pub class_name: String,
 
     /// Contains all other properties of the Instance.
-    pub properties: HashMap<String, RbxValue>,
+    pub properties: HashMap<String, Variant>,
 }
 
 /// Represents an instance that is rooted in an [`RbxTree`]. These are always
@@ -43,37 +42,37 @@ pub struct RbxInstance {
     properties: RbxInstanceProperties,
 
     /// The unique ID of the instance
-    id: RbxId,
+    id: Ref,
 
     /// All of the children of this instance. Order is relevant to preserve!
-    pub(crate) children: Vec<RbxId>,
+    pub(crate) children: Vec<Ref>,
 
     /// The parent of the instance, if there is one.
-    pub(crate) parent: Option<RbxId>,
+    pub(crate) parent: Option<Ref>,
 }
 
 impl RbxInstance {
     pub(crate) fn new(properties: RbxInstanceProperties) -> RbxInstance {
         RbxInstance {
             properties,
-            id: RbxId::new(),
+            id: Ref::new(),
             parent: None,
             children: Vec::new(),
         }
     }
 
     /// Returns the unique ID associated with this instance.
-    pub fn get_id(&self) -> RbxId {
+    pub fn get_id(&self) -> Ref {
         self.id
     }
 
     /// Returns the ID of the parent of this instance, if it has a parent.
-    pub fn get_parent_id(&self) -> Option<RbxId> {
+    pub fn get_parent_id(&self) -> Option<Ref> {
         self.parent
     }
 
     /// Returns a list of the IDs of the children of this instance.
-    pub fn get_children_ids(&self) -> &[RbxId] {
+    pub fn get_children_ids(&self) -> &[Ref] {
         &self.children
     }
 
@@ -82,7 +81,7 @@ impl RbxInstance {
     /// Works the same as `Vec::sort_by_key` which is used internally.
     pub fn sort_children_by_key<K, F>(&mut self, mut f: F)
     where
-        F: FnMut(RbxId) -> K,
+        F: FnMut(Ref) -> K,
         K: Ord,
     {
         self.children.sort_by_key(|&id| f(id));
@@ -93,7 +92,7 @@ impl RbxInstance {
     /// Works the same as `Vec::sort_unstable_by_key` which is used internally.
     pub fn sort_children_unstable_by_key<K, F>(&mut self, mut f: F)
     where
-        F: FnMut(RbxId) -> K,
+        F: FnMut(Ref) -> K,
         K: Ord,
     {
         self.children.sort_unstable_by_key(|&id| f(id));

@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 
+use rbx_types::Ref;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{
-    id::RbxId,
-    instance::{RbxInstance, RbxInstanceProperties},
-};
+use crate::instance::{RbxInstance, RbxInstanceProperties};
 
 /// Represents a tree containing Roblox instances.
 ///
@@ -17,8 +15,8 @@ use crate::{
 /// insert them into the tree.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RbxTree {
-    instances: HashMap<RbxId, RbxInstance>,
-    root_id: RbxId,
+    instances: HashMap<Ref, RbxInstance>,
+    root_id: Ref,
 }
 
 impl RbxTree {
@@ -36,23 +34,23 @@ impl RbxTree {
 
     /// Returns the ID of the root instance in the tree, which can be used
     /// alongside `get_instance` and friends.
-    pub fn get_root_id(&self) -> RbxId {
+    pub fn get_root_id(&self) -> Ref {
         self.root_id
     }
 
     /// Returns an iterator over all IDs in the tree.
-    pub fn iter_all_ids(&self) -> impl Iterator<Item = RbxId> + '_ {
+    pub fn iter_all_ids(&self) -> impl Iterator<Item = Ref> + '_ {
         self.instances.keys().cloned()
     }
 
     /// Returns the instance with the given ID if it's contained in this tree.
-    pub fn get_instance(&self, id: RbxId) -> Option<&RbxInstance> {
+    pub fn get_instance(&self, id: Ref) -> Option<&RbxInstance> {
         self.instances.get(&id)
     }
 
     /// Returns mutable access to the instance with the given ID if it's
     /// contained in this tree.
-    pub fn get_instance_mut(&mut self, id: RbxId) -> Option<&mut RbxInstance> {
+    pub fn get_instance_mut(&mut self, id: Ref) -> Option<&mut RbxInstance> {
         self.instances.get_mut(&id)
     }
 
@@ -62,12 +60,7 @@ impl RbxTree {
     /// ## Panics
     /// Panics if the instance `source_id` doesn't exist in the source tree or
     /// if the instance `dest_parent_id` doesn't exist in the destination tree.
-    pub fn move_instance(
-        &mut self,
-        source_id: RbxId,
-        dest_tree: &mut RbxTree,
-        dest_parent_id: RbxId,
-    ) {
+    pub fn move_instance(&mut self, source_id: Ref, dest_tree: &mut RbxTree, dest_parent_id: Ref) {
         self.orphan_instance(source_id);
 
         // Remove the instance we're trying to move and manually rewrite its
@@ -101,7 +94,7 @@ impl RbxTree {
     ///
     /// Panics if this operation would cause the tree to become cyclical and
     /// invalid.
-    pub fn set_parent(&mut self, id: RbxId, dest_parent_id: RbxId) {
+    pub fn set_parent(&mut self, id: Ref, dest_parent_id: Ref) {
         for instance in self.descendants(id) {
             if instance.get_id() == dest_parent_id {
                 panic!("set_parent cannot create circular references");
@@ -117,11 +110,7 @@ impl RbxTree {
     ///
     /// ## Panics
     /// Panics if the given ID does not refer to an instance in this tree.
-    pub fn insert_instance(
-        &mut self,
-        properties: RbxInstanceProperties,
-        parent_id: RbxId,
-    ) -> RbxId {
+    pub fn insert_instance(&mut self, properties: RbxInstanceProperties, parent_id: Ref) -> Ref {
         let mut tree_instance = RbxInstance::new(properties);
         tree_instance.parent = Some(parent_id);
 
@@ -134,7 +123,7 @@ impl RbxTree {
 
     /// Given an ID, remove the instance from the tree with that ID, along with
     /// all of its descendants.
-    pub fn remove_instance(&mut self, root_id: RbxId) -> Option<RbxTree> {
+    pub fn remove_instance(&mut self, root_id: Ref) -> Option<RbxTree> {
         if self.root_id == root_id {
             panic!("Cannot remove root ID from tree!");
         }
@@ -165,7 +154,7 @@ impl RbxTree {
     ///
     /// ## Panics
     /// Panics if the given ID is not present in the tree.
-    pub fn descendants(&self, id: RbxId) -> Descendants<'_> {
+    pub fn descendants(&self, id: Ref) -> Descendants<'_> {
         let instance = self
             .get_instance(id)
             .expect("Cannot enumerate descendants of an instance not in the tree");
@@ -186,7 +175,7 @@ impl RbxTree {
     /// # Panics
     /// Panics if the given instance does not exist, does not have a parent, or
     /// if any RbxTree variants were violated.
-    fn orphan_instance(&mut self, orphan_id: RbxId) {
+    fn orphan_instance(&mut self, orphan_id: Ref) {
         let parent_id = self
             .instances
             .get(&orphan_id)
@@ -217,7 +206,7 @@ impl RbxTree {
         self.unorphan_instance(id, parent_id);
     }
 
-    fn unorphan_instance(&mut self, id: RbxId, parent_id: RbxId) {
+    fn unorphan_instance(&mut self, id: Ref, parent_id: Ref) {
         {
             let instance = self
                 .instances
@@ -243,7 +232,7 @@ impl RbxTree {
 /// [`RbxTree::descendants`]: struct.RbxTree.html#method.descendants
 pub struct Descendants<'a> {
     tree: &'a RbxTree,
-    ids_to_visit: Vec<RbxId>,
+    ids_to_visit: Vec<Ref>,
 }
 
 impl<'a> Iterator for Descendants<'a> {

@@ -17,7 +17,7 @@
 //! };
 //!
 //! let mut tree = RbxTree::new(props);
-//! println!("ID of instance we just inserted is {}", tree.get_root_id());
+//! println!("ID of instance we just inserted is {:?}", tree.get_root_id());
 //! ```
 //!
 //! Note that the [maplit] crate is incredibly useful for defining properties
@@ -29,7 +29,7 @@
 //! ```
 //! # use std::collections::HashMap;
 //! # use rbx_dom_weak::{RbxInstanceProperties, RbxTree};
-//! use rbx_dom_weak::RbxValue;
+//! use rbx_dom_weak::types::Variant;
 //! use maplit::hashmap;
 //! #
 //! # let props = RbxInstanceProperties {
@@ -44,17 +44,15 @@
 //!     name: "HttpService".to_owned(),
 //!     class_name: "HttpService".to_owned(),
 //!     properties: hashmap! {
-//          // Properties are represented via the RbxValue enum
-//!         "HttpEnabled".to_owned() => RbxValue::Bool {
-//!             value: true,
-//!         },
+//          // Properties are represented via the Variant enum
+//!         "HttpEnabled".to_owned() => true.into(),
 //!     },
 //! };
 //!
 //! let datamodel_id = tree.get_root_id();
 //! let http_service_id = tree.insert_instance(http_service, datamodel_id);
 //!
-//! println!("HttpService has ID {}", http_service_id);
+//! println!("HttpService has ID {:?}", http_service_id);
 //! ```
 //!
 //! To change properties on an instance that's already present in the tree, use
@@ -68,20 +66,12 @@
 //! [`RbxInstanceProperties`]: struct.RbxInstanceProperties.html
 //! [maplit]: https://crates.io/crates/maplit
 
-mod brick_color;
-mod id;
 mod instance;
-mod shared_string;
 mod tree;
-mod unresolved_value;
-mod value;
+
+pub use rbx_types as types;
 
 pub use crate::{
-    brick_color::BrickColor,
-    id::RbxId,
     instance::{RbxInstance, RbxInstanceProperties},
-    shared_string::SharedString,
     tree::{Descendants, RbxTree},
-    unresolved_value::{AmbiguousRbxValue, UnresolvedRbxValue},
-    value::*,
 };
