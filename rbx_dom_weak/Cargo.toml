@@ -12,8 +12,3 @@ edition = "2018"
 
 [dependencies]
 rbx_types = { path = "../rbx_types", features = ["serde"] }
-serde = { version = "1.0", features = ["derive"] }
-
-[dev-dependencies]
-serde_json = "1.0"
-maplit = "1.0"
