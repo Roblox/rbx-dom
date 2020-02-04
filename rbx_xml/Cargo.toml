@@ -13,7 +13,7 @@ edition = "2018"
 [dependencies]
 base64 = "0.11.0"
 log = "0.4.6"
-rbx_dom_weak = { version = "1.10.0", path = "../rbx_dom_weak" }
+rbx_dom_weak = { path = "../rbx_dom_weak" }
 rbx_reflection = { version = "3.3.408", path = "../rbx_reflection" }
 xml-rs = "0.8.0"
 
