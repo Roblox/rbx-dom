@@ -3,6 +3,24 @@ use std::collections::HashMap;
 use rbx_types::{Ref, Variant};
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct InstanceBuilder {
+    name: String,
+    class_name: String,
+    properties: HashMap<String, Variant>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Instance {
+    referent: Ref,
+    children: Vec<Ref>,
+    parent: Option<Ref>,
+
+    name: String,
+    class_name: String,
+    properties: HashMap<String, Variant>,
+}
+
 /// The properties associated with a Roblox Instance that might not exist yet.
 ///
 /// To construct a real instance with an ID and children, insert an

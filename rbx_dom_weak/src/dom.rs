@@ -39,11 +39,6 @@ impl WeakDom {
         self.root_ref
     }
 
-    /// Returns an iterator over all IDs in the tree.
-    pub fn iter_all_ids(&self) -> impl Iterator<Item = Ref> + '_ {
-        self.instances.keys().cloned()
-    }
-
     /// Returns the instance with the given ID if it's contained in this tree.
     pub fn get_instance(&self, id: Ref) -> Option<&RbxInstance> {
         self.instances.get(&id)

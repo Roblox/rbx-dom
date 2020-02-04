@@ -72,6 +72,6 @@ mod instance;
 pub use rbx_types as types;
 
 pub use crate::{
-    dom::{Descendants, WeakDom},
-    instance::{RbxInstance, RbxInstanceProperties},
+    dom::WeakDom,
+    instance::{Instance, InstanceBuilder},
 };
