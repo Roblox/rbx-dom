@@ -14,22 +14,22 @@ use crate::instance::{RbxInstance, RbxInstanceProperties};
 /// [RbxInstanceProperties](struct.RbxInstanceProperties.html) objects and
 /// insert them into the tree.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct RbxTree {
+pub struct WeakDom {
     instances: HashMap<Ref, RbxInstance>,
     root_id: Ref,
 }
 
-impl RbxTree {
-    /// Construct a new `RbxTree` with its root instance constructed using the
+impl WeakDom {
+    /// Construct a new `WeakDom` with its root instance constructed using the
     /// given properties.
-    pub fn new(root_properties: RbxInstanceProperties) -> RbxTree {
+    pub fn new(root_properties: RbxInstanceProperties) -> WeakDom {
         let rooted_root = RbxInstance::new(root_properties);
         let root_id = rooted_root.get_id();
 
         let mut instances = HashMap::new();
         instances.insert(root_id, rooted_root);
 
-        RbxTree { instances, root_id }
+        WeakDom { instances, root_id }
     }
 
     /// Returns the ID of the root instance in the tree, which can be used
@@ -60,7 +60,7 @@ impl RbxTree {
     /// ## Panics
     /// Panics if the instance `source_id` doesn't exist in the source tree or
     /// if the instance `dest_parent_id` doesn't exist in the destination tree.
-    pub fn move_instance(&mut self, source_id: Ref, dest_tree: &mut RbxTree, dest_parent_id: Ref) {
+    pub fn move_instance(&mut self, source_id: Ref, dest_tree: &mut WeakDom, dest_parent_id: Ref) {
         self.orphan_instance(source_id);
 
         // Remove the instance we're trying to move and manually rewrite its
@@ -123,7 +123,7 @@ impl RbxTree {
 
     /// Given an ID, remove the instance from the tree with that ID, along with
     /// all of its descendants.
-    pub fn remove_instance(&mut self, root_id: Ref) -> Option<RbxTree> {
+    pub fn remove_instance(&mut self, root_id: Ref) -> Option<WeakDom> {
         if self.root_id == root_id {
             panic!("Cannot remove root ID from tree!");
         }
@@ -143,7 +143,7 @@ impl RbxTree {
             new_tree_instances.insert(id, instance);
         }
 
-        Some(RbxTree {
+        Some(WeakDom {
             instances: new_tree_instances,
             root_id,
         })
@@ -170,11 +170,11 @@ impl RbxTree {
     ///
     /// The instance will still refer to its parent by ID, so any method calling
     /// orphan_instance will need to make additional changes to preserve
-    /// RbxTree's invariants.
+    /// WeakDom's invariants.
     ///
     /// # Panics
     /// Panics if the given instance does not exist, does not have a parent, or
-    /// if any RbxTree variants were violated.
+    /// if any WeakDom variants were violated.
     fn orphan_instance(&mut self, orphan_id: Ref) {
         let parent_id = self
             .instances
@@ -225,13 +225,13 @@ impl RbxTree {
     }
 }
 
-/// An iterator over all descendants of an instance in an [`RbxTree`]. Returned
-/// by [`RbxTree::descendants`].
+/// An iterator over all descendants of an instance in an [`WeakDom`]. Returned
+/// by [`WeakDom::descendants`].
 ///
-/// [`RbxTree`]: struct.RbxTree.html
-/// [`RbxTree::descendants`]: struct.RbxTree.html#method.descendants
+/// [`WeakDom`]: struct.WeakDom.html
+/// [`WeakDom::descendants`]: struct.WeakDom.html#method.descendants
 pub struct Descendants<'a> {
-    tree: &'a RbxTree,
+    tree: &'a WeakDom,
     ids_to_visit: Vec<Ref>,
 }
 
@@ -261,7 +261,7 @@ mod test {
 
     #[test]
     fn descendants() {
-        let mut tree = RbxTree::new(RbxInstanceProperties {
+        let mut tree = WeakDom::new(RbxInstanceProperties {
             name: "Place 1".to_owned(),
             class_name: "DataModel".to_owned(),
             properties: HashMap::new(),
@@ -310,7 +310,7 @@ mod test {
 
     #[test]
     fn move_instances() {
-        let mut source_tree = RbxTree::new(RbxInstanceProperties {
+        let mut source_tree = WeakDom::new(RbxInstanceProperties {
             name: "Place 1".to_owned(),
             class_name: "DataModel".to_owned(),
             properties: HashMap::new(),
@@ -345,7 +345,7 @@ mod test {
             a_id,
         );
 
-        let mut dest_tree = RbxTree::new(RbxInstanceProperties {
+        let mut dest_tree = WeakDom::new(RbxInstanceProperties {
             name: "Place 2".to_owned(),
             class_name: "DataModel".to_owned(),
             properties: HashMap::new(),
@@ -386,7 +386,7 @@ mod test {
 
     #[test]
     fn set_parent() {
-        let mut tree = RbxTree::new(RbxInstanceProperties {
+        let mut tree = WeakDom::new(RbxInstanceProperties {
             name: "Place 1".to_owned(),
             class_name: "DataModel".to_owned(),
             properties: HashMap::new(),

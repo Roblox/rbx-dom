@@ -4,11 +4,11 @@
 //!
 //! Constructing a new tree of instances is accomplished by first creating an
 //! [`RbxInstanceProperties`] object that describes the root instance of the
-//! tree, and then wrapping it with an [`RbxTree`]:
+//! tree, and then wrapping it with an [`WeakDom`]:
 //!
 //! ```
 //! use std::collections::HashMap;
-//! use rbx_dom_weak::{RbxInstanceProperties, RbxTree};
+//! use rbx_dom_weak::{RbxInstanceProperties, WeakDom};
 //!
 //! let props = RbxInstanceProperties {
 //!     name: "My Cool Game".to_owned(),
@@ -16,19 +16,19 @@
 //!     properties: HashMap::new(),
 //! };
 //!
-//! let mut tree = RbxTree::new(props);
+//! let mut tree = WeakDom::new(props);
 //! println!("ID of instance we just inserted is {:?}", tree.get_root_id());
 //! ```
 //!
 //! Note that the [maplit] crate is incredibly useful for defining properties
 //! inline.
 //!
-//! Once we have a tree, we can use [`RbxTree::insert_instance`] and
-//! [`RbxTree::get_instance`] to add instances to the tree and retrieve them.
+//! Once we have a tree, we can use [`WeakDom::insert_instance`] and
+//! [`WeakDom::get_instance`] to add instances to the tree and retrieve them.
 //!
 //! ```
 //! # use std::collections::HashMap;
-//! # use rbx_dom_weak::{RbxInstanceProperties, RbxTree};
+//! # use rbx_dom_weak::{RbxInstanceProperties, WeakDom};
 //! use rbx_dom_weak::types::Variant;
 //! use maplit::hashmap;
 //! #
@@ -38,7 +38,7 @@
 //! #     properties: HashMap::new(),
 //! # };
 //! #
-//! # let mut tree = RbxTree::new(props);
+//! # let mut tree = WeakDom::new(props);
 //! #
 //! let http_service = RbxInstanceProperties {
 //!     name: "HttpService".to_owned(),
@@ -56,22 +56,22 @@
 //! ```
 //!
 //! To change properties on an instance that's already present in the tree, use
-//! [`RbxTree::get_instance_mut`]. Note that it isn't possible to add or remove
-//! children through this method, use [`RbxTree::insert_instance`] instead.
+//! [`WeakDom::get_instance_mut`]. Note that it isn't possible to add or remove
+//! children through this method, use [`WeakDom::insert_instance`] instead.
 //!
-//! [`RbxTree`]: struct.RbxTree.html
-//! [`RbxTree::insert_instance`]: struct.RbxTree.html#method.insert_instance
-//! [`RbxTree::get_instance`]: struct.RbxTree.html#method.get_instance
-//! [`RbxTree::get_instance_mut`]: struct.RbxTree.html#method.get_instance_mut
+//! [`WeakDom`]: struct.WeakDom.html
+//! [`WeakDom::insert_instance`]: struct.WeakDom.html#method.insert_instance
+//! [`WeakDom::get_instance`]: struct.WeakDom.html#method.get_instance
+//! [`WeakDom::get_instance_mut`]: struct.WeakDom.html#method.get_instance_mut
 //! [`RbxInstanceProperties`]: struct.RbxInstanceProperties.html
 //! [maplit]: https://crates.io/crates/maplit
 
+mod dom;
 mod instance;
-mod tree;
 
 pub use rbx_types as types;
 
 pub use crate::{
+    dom::{Descendants, WeakDom},
     instance::{RbxInstance, RbxInstanceProperties},
-    tree::{Descendants, RbxTree},
 };
