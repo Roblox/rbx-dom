@@ -6,13 +6,13 @@ use serde::{Deserialize, Serialize};
 /// The properties associated with a Roblox Instance that might not exist yet.
 ///
 /// To construct a real instance with an ID and children, insert an
-/// `RbxInstanceProperties` object into an existing [`RbxTree`] with
-/// [`RbxTree::insert_instance`] or by creating a new tree with it as the root
-/// using [`RbxTree::new`].
+/// `RbxInstanceProperties` object into an existing [`WeakDom`] with
+/// [`WeakDom::insert_instance`] or by creating a new tree with it as the root
+/// using [`WeakDom::new`].
 ///
-/// [`RbxTree`]: struct.RbxTree.html
-/// [`RbxTree::insert_instance`]: struct.RbxTree.html#method.insert_instance
-/// [`RbxTree::new`]: struct.RbxTree.html#method.new
+/// [`WeakDom`]: struct.WeakDom.html
+/// [`WeakDom::insert_instance`]: struct.WeakDom.html#method.insert_instance
+/// [`WeakDom::new`]: struct.WeakDom.html#method.new
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct RbxInstanceProperties {
@@ -26,15 +26,15 @@ pub struct RbxInstanceProperties {
     pub properties: HashMap<String, Variant>,
 }
 
-/// Represents an instance that is rooted in an [`RbxTree`]. These are always
-/// returned from an existing [`RbxTree`] with a method like
-/// [`RbxTree::get_instance`].
+/// Represents an instance that is rooted in an [`WeakDom`]. These are always
+/// returned from an existing [`WeakDom`] with a method like
+/// [`WeakDom::get_instance`].
 ///
 /// `RbxInstance` derefs to `RbxInstanceProperties` to make accessing properties
 /// easier.
 ///
-/// [`RbxTree`]: struct.RbxTree.html
-/// [`RbxTree::get_instance`]: struct.RbxTree.html#method.get_instance
+/// [`WeakDom`]: struct.WeakDom.html
+/// [`WeakDom::get_instance`]: struct.WeakDom.html#method.get_instance
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct RbxInstance {
