@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use rbx_types::Ref;
 
@@ -19,24 +19,32 @@ pub struct WeakDom {
 }
 
 impl WeakDom {
-    pub fn new(root: InstanceBuilder) -> WeakDom {
-        let root = Instance {
-            referent: root.referent,
-            children: Vec::new(),
-            parent: None,
-            name: root.name,
-            class: root.class,
-            properties: root.properties,
-        };
+    pub fn new(builder: InstanceBuilder) -> WeakDom {
+        let root_ref = builder.referent;
 
-        let root_ref = root.referent;
         let mut instances = HashMap::new();
-        instances.insert(root_ref, root);
+        instances.insert(
+            root_ref,
+            Instance {
+                referent: root_ref,
+                children: Vec::new(),
+                parent: None,
+                name: builder.name,
+                class: builder.class,
+                properties: builder.properties,
+            },
+        );
 
-        WeakDom {
+        let mut dom = WeakDom {
             root_ref,
             instances,
+        };
+
+        for child in builder.children {
+            dom.insert(root_ref, child);
         }
+
+        dom
     }
 
     pub fn root_ref(&self) -> Ref {
@@ -59,15 +67,45 @@ impl WeakDom {
         self.instances.get_mut(&referent)
     }
 
-    pub fn insert(&mut self, parent_ref: Ref, instance: InstanceBuilder) {
-        unimplemented!()
+    pub fn insert(&mut self, parent_ref: Ref, builder: InstanceBuilder) {
+        let referent = builder.referent;
+
+        self.instances.insert(
+            referent,
+            Instance {
+                referent,
+                children: Vec::new(),
+                parent: Some(parent_ref),
+                name: builder.name,
+                class: builder.class,
+                properties: builder.properties,
+            },
+        );
+
+        let parent = self
+            .instances
+            .get_mut(&parent_ref)
+            .unwrap_or_else(|| panic!("cannot insert into parent that does not exist"));
+
+        parent.children.push(referent);
+
+        for child in builder.children {
+            self.insert(referent, child);
+        }
     }
 
-    pub fn remove(&mut self, referent: Ref) {
-        unimplemented!()
-    }
+    pub fn destroy(&mut self, referent: Ref) {
+        if let Some(parent) = self.instances[&referent].parent {
+            let parent = self.instances.get_mut(&parent).unwrap();
+            parent.children.retain(|&child| child != referent);
+        }
 
-    pub fn take(&mut self, referent: Ref) -> InstanceBuilder {
-        unimplemented!()
+        let mut to_remove = VecDeque::new();
+        to_remove.push_back(referent);
+
+        while let Some(referent) = to_remove.pop_front() {
+            let instance = self.instances.remove(&referent).unwrap();
+            to_remove.extend(instance.children);
+        }
     }
 }

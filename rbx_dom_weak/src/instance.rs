@@ -12,11 +12,14 @@ pub struct InstanceBuilder {
 }
 
 impl InstanceBuilder {
-    pub fn new() -> Self {
+    pub fn new<S: Into<String>>(class: S) -> Self {
+        let class = class.into();
+        let name = class.clone();
+
         InstanceBuilder {
             referent: Ref::new(),
-            name: String::new(),
-            class: String::new(),
+            name,
+            class,
             properties: HashMap::new(),
             children: Vec::new(),
         }
@@ -25,13 +28,6 @@ impl InstanceBuilder {
     pub fn with_name<S: Into<String>>(self, name: S) -> Self {
         Self {
             name: name.into(),
-            ..self
-        }
-    }
-
-    pub fn with_class<S: Into<String>>(self, class: S) -> Self {
-        Self {
-            class: class.into(),
             ..self
         }
     }
