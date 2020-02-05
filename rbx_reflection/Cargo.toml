@@ -1,7 +1,7 @@
 [package]
 name = "rbx_reflection"
 description = "Roblox reflection database and ambiguous type resolution"
-version = "3.3.408"
+version = "4.0.0-dev"
 license = "MIT"
 documentation = "https://docs.rs/rbx_reflection"
 homepage = "https://github.com/rojo-rbx/rbx-dom"
@@ -13,5 +13,5 @@ edition = "2018"
 [dependencies]
 bitflags = "1.0.4"
 lazy_static = "1.2.0"
-rbx_dom_weak = { path = "../rbx_dom_weak" }
+rbx_types = { path = "../rbx_types" }
 serde = { version = "1.0", features = ["derive"] }

@@ -4,8 +4,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use bitflags::bitflags;
-use rbx_dom_weak::{RbxValue, RbxValueType};
-use serde::{Deserialize, Serialize};
+use rbx_types::{Variant, VariantType};
 
 /// Describes a class of Roblox instance. Classes relate to eachother via
 /// inheritance and have properties attached to them.
@@ -17,7 +16,7 @@ pub struct RbxClassDescriptor {
     pub(crate) superclass: Option<Cow<'static, str>>,
     pub(crate) tags: RbxInstanceTags,
     pub(crate) properties: HashMap<Cow<'static, str>, RbxPropertyDescriptor>,
-    pub(crate) default_properties: HashMap<Cow<'static, str>, RbxValue>,
+    pub(crate) default_properties: HashMap<Cow<'static, str>, Variant>,
 }
 
 impl RbxClassDescriptor {
@@ -71,7 +70,7 @@ impl RbxClassDescriptor {
     /// Not all properties will have default values due to the limitations of
     /// how rbx_reflection measures defaults.
     #[inline]
-    pub fn get_default_value<'a>(&'a self, property_name: &str) -> Option<&'a RbxValue> {
+    pub fn get_default_value<'a>(&'a self, property_name: &str) -> Option<&'a Variant> {
         self.default_properties.get(property_name)
     }
 
@@ -79,7 +78,7 @@ impl RbxClassDescriptor {
     ///
     /// See notes on `get_default_value` for inheritance interactions.
     #[inline]
-    pub fn iter_default_values(&self) -> impl Iterator<Item = (&str, &RbxValue)> {
+    pub fn iter_default_values(&self) -> impl Iterator<Item = (&str, &Variant)> {
         self.default_properties
             .iter()
             .map(|(key, value)| (key.as_ref(), value))
@@ -134,7 +133,7 @@ impl RbxPropertyDescriptor {
 
     /// The type of the property.
     ///
-    /// `RbxPropertyTypeDescriptor` is more detailed than `RbxValueType`: it
+    /// `RbxPropertyTypeDescriptor` is more detailed than `VariantType`: it
     /// contains extra information for enums and can also hold types that aren't
     /// yet implemented by rbx_dom_weak.
     #[inline]
@@ -209,10 +208,10 @@ impl RbxEnumDescriptor {
 }
 
 /// Describes the type of an instance property.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum RbxPropertyTypeDescriptor {
     /// The property is a regular value of the given type.
-    Data(RbxValueType),
+    Data(VariantType),
 
     /// The property is an enum with the given name.
     Enum(Cow<'static, str>),
@@ -225,7 +224,7 @@ pub enum RbxPropertyTypeDescriptor {
 
 /// Describes what kinds of access are allowed to a property from a script
 /// running inside Roblox.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum RbxPropertyScriptability {
     /// The property is not scriptable at all.
     None,
