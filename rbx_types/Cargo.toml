@@ -1,7 +1,7 @@
 [package]
 name = "rbx_types"
 description = "Types used to represent Roblox values"
-version = "0.1.0-dev"
+version = "0.1.0"
 authors = ["Lucien Greathouse <me@lpghatguy.com>"]
 edition = "2018"
 license = "MIT"
