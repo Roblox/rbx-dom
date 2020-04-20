@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 
-use rbx_dom_weak::{ColorSequence, ColorSequenceKeypoint, RbxValue};
+use rbx_dom_weak::types::{Color3, ColorSequence, ColorSequenceKeypoint};
 
 use crate::{
     core::XmlType,
@@ -9,26 +9,18 @@ use crate::{
     serializer_core::{XmlEventWriter, XmlWriteEvent},
 };
 
-pub struct ColorSequenceType;
-
-impl XmlType<ColorSequence> for ColorSequenceType {
+impl XmlType for ColorSequence {
     const XML_TAG_NAME: &'static str = "ColorSequence";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &ColorSequence,
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-
-        for keypoint in &value.keypoints {
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        for keypoint in &self.keypoints {
             writer.write_characters(keypoint.time)?;
             writer.write(XmlWriteEvent::characters(" "))?;
-            writer.write_characters(keypoint.color[0])?;
+            writer.write_characters(keypoint.color.r)?;
             writer.write(XmlWriteEvent::characters(" "))?;
-            writer.write_characters(keypoint.color[1])?;
+            writer.write_characters(keypoint.color.g)?;
             writer.write(XmlWriteEvent::characters(" "))?;
-            writer.write_characters(keypoint.color[2])?;
+            writer.write_characters(keypoint.color.b)?;
             writer.write(XmlWriteEvent::characters(" "))?;
 
             // Envelope is always 0 for ColorSequenceKeypoint. This value isn't
@@ -37,14 +29,10 @@ impl XmlType<ColorSequence> for ColorSequenceType {
             writer.write(XmlWriteEvent::characters(" "))?;
         }
 
-        writer.end_element()?;
-
         Ok(())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
         let contents = reader.read_characters()?;
         let mut pieces = contents
             .split(" ")
@@ -74,7 +62,7 @@ impl XmlType<ColorSequence> for ColorSequenceType {
 
             keypoints.push(ColorSequenceKeypoint {
                 time,
-                color: [r, g, b],
+                color: Color3::new(r, g, b),
             });
         }
 
@@ -84,11 +72,7 @@ impl XmlType<ColorSequence> for ColorSequenceType {
             )));
         }
 
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::ColorSequence {
-            value: ColorSequence { keypoints },
-        })
+        Ok(ColorSequence { keypoints })
     }
 }
 
@@ -100,53 +84,23 @@ mod test {
 
     #[test]
     fn round_trip_color_sequence() {
-        let test_input = ColorSequence {
+        test_util::test_xml_round_trip(&ColorSequence {
             keypoints: vec![
                 ColorSequenceKeypoint {
                     time: 0.0,
-                    color: [0.0, 0.5, 1.0],
+                    color: Color3::new(0.0, 0.5, 1.0),
                 },
                 ColorSequenceKeypoint {
                     time: 1.0,
-                    color: [1.0, 0.5, 0.0],
+                    color: Color3::new(1.0, 0.5, 0.0),
                 },
             ],
-        };
-
-        test_util::test_xml_round_trip::<ColorSequenceType, _>(
-            &test_input,
-            RbxValue::ColorSequence {
-                value: test_input.clone(),
-            },
-        );
+        });
     }
 
     #[test]
     fn deserialize_color_sequence() {
-        test_util::test_xml_deserialize::<ColorSequenceType, _>(
-            r#"
-                <ColorSequence name="foo">0 0 0.5 1 0 1 1 0.5 0 0 </ColorSequence>
-            "#,
-            RbxValue::ColorSequence {
-                value: ColorSequence {
-                    keypoints: vec![
-                        ColorSequenceKeypoint {
-                            time: 0.0,
-                            color: [0.0, 0.5, 1.0],
-                        },
-                        ColorSequenceKeypoint {
-                            time: 1.0,
-                            color: [1.0, 0.5, 0.0],
-                        },
-                    ],
-                },
-            },
-        );
-    }
-
-    #[test]
-    fn serialize_color_sequence() {
-        test_util::test_xml_serialize::<ColorSequenceType, _>(
+        test_util::test_xml_deserialize(
             r#"
                 <ColorSequence name="foo">0 0 0.5 1 0 1 1 0.5 0 0 </ColorSequence>
             "#,
@@ -154,11 +108,32 @@ mod test {
                 keypoints: vec![
                     ColorSequenceKeypoint {
                         time: 0.0,
-                        color: [0.0, 0.5, 1.0],
+                        color: Color3::new(0.0, 0.5, 1.0),
                     },
                     ColorSequenceKeypoint {
                         time: 1.0,
-                        color: [1.0, 0.5, 0.0],
+                        color: Color3::new(1.0, 0.5, 0.0),
+                    },
+                ],
+            },
+        );
+    }
+
+    #[test]
+    fn serialize_color_sequence() {
+        test_util::test_xml_serialize(
+            r#"
+                <ColorSequence name="foo">0 0 0.5 1 0 1 1 0.5 0 0 </ColorSequence>
+            "#,
+            &ColorSequence {
+                keypoints: vec![
+                    ColorSequenceKeypoint {
+                        time: 0.0,
+                        color: Color3::new(0.0, 0.5, 1.0),
+                    },
+                    ColorSequenceKeypoint {
+                        time: 1.0,
+                        color: Color3::new(1.0, 0.5, 0.0),
                     },
                 ],
             },

@@ -2,11 +2,13 @@ use std::{collections::HashMap, io::Read};
 
 use log::trace;
 use rbx_dom_weak::{
-    RbxId, RbxInstanceProperties, RbxTree, RbxValue, RbxValueConversion, RbxValueType, SharedString,
+    types::{Ref, SharedString, Variant, VariantType},
+    InstanceBuilder, WeakDom,
 };
-use rbx_reflection::RbxPropertyTypeDescriptor;
+use rbx_reflection::PropertyType;
 
 use crate::{
+    compat::{TodoValueConversion, TodoValueConversionType},
     core::find_canonical_property_descriptor,
     error::{DecodeError, DecodeErrorKind},
     types::read_value_xml,
@@ -14,14 +16,10 @@ use crate::{
 
 use crate::deserializer_core::{XmlEventReader, XmlReadEvent};
 
-pub fn decode_internal<R: Read>(source: R, options: DecodeOptions) -> Result<RbxTree, DecodeError> {
-    let mut tree = RbxTree::new(RbxInstanceProperties {
-        class_name: "DataModel".to_owned(),
-        name: "DataModel".to_owned(),
-        properties: HashMap::new(),
-    });
+pub fn decode_internal<R: Read>(source: R, options: DecodeOptions) -> Result<WeakDom, DecodeError> {
+    let mut tree = WeakDom::new(InstanceBuilder::new("DataModel"));
 
-    let root_id = tree.get_root_id();
+    let root_id = tree.root_ref();
 
     let mut iterator = XmlEventReader::from_source(source);
     let mut state = ParseState::new(&mut tree, options);
@@ -106,9 +104,9 @@ impl Default for DecodeOptions {
     }
 }
 
-/// The state needed to deserialize an XML model into an `RbxTree`.
+/// The state needed to deserialize an XML model into an `WeakDom`.
 pub struct ParseState<'a> {
-    tree: &'a mut RbxTree,
+    tree: &'a mut WeakDom,
     options: DecodeOptions,
 
     /// Metadata deserialized from 'Meta' fields in the file.
@@ -121,7 +119,7 @@ pub struct ParseState<'a> {
     ///
     /// We need to do that step in two passes because it's possible for
     /// instances to refer to instances that are later in the file.
-    referents_to_ids: HashMap<String, RbxId>,
+    referents_to_ids: HashMap<String, Ref>,
 
     /// A list of Ref property rewrites to apply. After the first
     /// deserialization pass, we enumerate over this list and fill in the
@@ -139,19 +137,19 @@ pub struct ParseState<'a> {
 }
 
 struct ReferentRewrite {
-    id: RbxId,
+    id: Ref,
     property_name: String,
     referent_value: String,
 }
 
 struct SharedStringRewrite {
-    id: RbxId,
+    id: Ref,
     property_name: String,
     shared_string_hash: String,
 }
 
 impl<'a> ParseState<'a> {
-    fn new(tree: &mut RbxTree, options: DecodeOptions) -> ParseState {
+    fn new(tree: &mut WeakDom, options: DecodeOptions) -> ParseState {
         ParseState {
             tree,
             options,
@@ -164,15 +162,10 @@ impl<'a> ParseState<'a> {
     }
 
     /// Marks that a property on this instance needs to be rewritten once we
-    /// have a complete view of how referents map to RbxId values.
+    /// have a complete view of how referents map to Ref values.
     ///
     /// This is used to deserialize non-null Ref values correctly.
-    pub fn add_referent_rewrite(
-        &mut self,
-        id: RbxId,
-        property_name: String,
-        referent_value: String,
-    ) {
+    pub fn add_referent_rewrite(&mut self, id: Ref, property_name: String, referent_value: String) {
         self.referent_rewrites.push(ReferentRewrite {
             id,
             property_name,
@@ -181,12 +174,12 @@ impl<'a> ParseState<'a> {
     }
 
     /// Marks that a property on this instance needs to be rewritten once we
-    /// have a complete view of how referents map to RbxId values.
+    /// have a complete view of how referents map to Ref values.
     ///
     /// This is used to deserialize non-null Ref values correctly.
     pub fn add_shared_string_rewrite(
         &mut self,
-        id: RbxId,
+        id: Ref,
         property_name: String,
         shared_string_hash: String,
     ) {
@@ -207,15 +200,12 @@ fn apply_referent_rewrites(state: &mut ParseState) {
 
         let instance = state
             .tree
-            .get_instance_mut(rewrite.id)
+            .get_by_ref_mut(rewrite.id)
             .expect("rbx_xml bug: had ID in referent rewrite list that didn't end up in the tree");
 
-        instance.properties.insert(
-            rewrite.property_name.clone(),
-            RbxValue::Ref {
-                value: Some(new_value),
-            },
-        );
+        instance
+            .properties
+            .insert(rewrite.property_name.clone(), Variant::Ref(new_value));
     }
 }
 
@@ -226,13 +216,13 @@ fn apply_shared_string_rewrites(state: &mut ParseState) {
             None => continue,
         };
 
-        let instance = state.tree.get_instance_mut(rewrite.id).expect(
+        let instance = state.tree.get_by_ref_mut(rewrite.id).expect(
             "rbx_xml bug: had ID in SharedString rewrite list that didn't end up in the tree",
         );
 
         instance.properties.insert(
             rewrite.property_name.clone(),
-            RbxValue::SharedString { value: new_value },
+            Variant::SharedString(new_value),
         );
     }
 }
@@ -240,7 +230,7 @@ fn apply_shared_string_rewrites(state: &mut ParseState) {
 fn deserialize_root<R: Read>(
     reader: &mut XmlEventReader<R>,
     state: &mut ParseState,
-    parent_id: RbxId,
+    parent_id: Ref,
 ) -> Result<(), DecodeError> {
     match reader.expect_next()? {
         XmlReadEvent::StartDocument { .. } => {}
@@ -400,7 +390,7 @@ fn deserialize_shared_string<R: Read>(
 fn deserialize_instance<R: Read>(
     reader: &mut XmlEventReader<R>,
     state: &mut ParseState,
-    parent_id: RbxId,
+    parent_id: Ref,
 ) -> Result<(), DecodeError> {
     let (class_name, referent) = {
         let attributes = reader.expect_start_with_name("Item")?;
@@ -424,19 +414,14 @@ fn deserialize_instance<R: Read>(
 
     trace!("Class {} with referent {:?}", class_name, referent);
 
-    let instance_props = RbxInstanceProperties {
-        class_name,
-        name: String::new(),
-        properties: HashMap::new(),
-    };
-
-    let instance_id = state.tree.insert_instance(instance_props, parent_id);
+    let builder = InstanceBuilder::new(class_name);
+    let instance_id = state.tree.insert(parent_id, builder);
 
     if let Some(referent) = referent {
         state.referents_to_ids.insert(referent, instance_id);
     }
 
-    let mut properties: HashMap<String, RbxValue> = HashMap::new();
+    let mut properties: HashMap<String, Variant> = HashMap::new();
 
     loop {
         match reader.expect_peek()? {
@@ -469,18 +454,18 @@ fn deserialize_instance<R: Read>(
         }
     }
 
-    let instance = state.tree.get_instance_mut(instance_id).unwrap();
+    let instance = state.tree.get_by_ref_mut(instance_id).unwrap();
 
     instance.name = match properties.remove("Name") {
         Some(value) => match value {
-            RbxValue::String { value } => value,
-            _ => return Err(reader.error(DecodeErrorKind::NameMustBeString(value.get_type()))),
+            Variant::String(value) => value,
+            _ => return Err(reader.error(DecodeErrorKind::NameMustBeString(value.ty()))),
         },
 
         // TODO: Use reflection to get default name instead. This should only
         // matter for ValueBase instances in files created by tools other than
         // Roblox Studio.
-        None => instance.class_name.clone(),
+        None => instance.class.clone(),
     };
 
     instance.properties = properties;
@@ -491,16 +476,16 @@ fn deserialize_instance<R: Read>(
 fn deserialize_properties<R: Read>(
     reader: &mut XmlEventReader<R>,
     state: &mut ParseState,
-    instance_id: RbxId,
-    props: &mut HashMap<String, RbxValue>,
+    instance_id: Ref,
+    props: &mut HashMap<String, Variant>,
 ) -> Result<(), DecodeError> {
     reader.expect_start_with_name("Properties")?;
 
     let class_name = state
         .tree
-        .get_instance(instance_id)
+        .get_by_ref(instance_id)
         .expect("Couldn't find instance to deserialize properties into")
-        .class_name
+        .class
         .clone();
 
     loop {
@@ -548,13 +533,8 @@ fn deserialize_properties<R: Read>(
         };
 
         if let Some(descriptor) = maybe_descriptor {
-            let xml_value = read_value_xml(
-                reader,
-                state,
-                &xml_type_name,
-                instance_id,
-                descriptor.name(),
-            )?;
+            let xml_value =
+                read_value_xml(reader, state, &xml_type_name, instance_id, &descriptor.name)?;
 
             // The property descriptor might specify a different type than the
             // one we saw in the XML.
@@ -565,63 +545,39 @@ fn deserialize_properties<R: Read>(
             // For example:
             // - Int/Float widening from 32-bit to 64-bit
             // - BrickColor properties turning into Color3
-            let expected_type = match descriptor.property_type() {
-                RbxPropertyTypeDescriptor::Data(value_type) => *value_type,
-                RbxPropertyTypeDescriptor::Enum(_enum_name) => RbxValueType::Enum,
-                RbxPropertyTypeDescriptor::UnimplementedType(_) => {
-                    // Properties with types that aren't implemented yet are
-                    // effectively unknown properties, so we handle them
-                    // similarly.
-                    match state.options.property_behavior {
-                        DecodePropertyBehavior::IgnoreUnknown => {
-                            // We've already read the value, we can just skip
-                            // over it.
-                            continue;
-                        }
-                        DecodePropertyBehavior::ReadUnknown => {
-                            // This conversion will be returned into a no-op by
-                            // try_convert_ref
-                            xml_value.get_type()
-                        }
-                        DecodePropertyBehavior::ErrorOnUnknown => {
-                            return Err(reader.error(DecodeErrorKind::UnknownProperty {
-                                class_name,
-                                property_name: xml_property_name,
-                            }));
-                        }
-                        DecodePropertyBehavior::NoReflection
-                        | DecodePropertyBehavior::__Nonexhaustive => {
-                            unreachable!();
-                        }
-                    }
-                }
+            let expected_type = match &descriptor.value_type {
+                PropertyType::Data(value_type) => *value_type,
+                PropertyType::Enum(_enum_name) => VariantType::EnumValue,
+
+                // FIXME?
+                _ => unimplemented!(),
             };
 
             let value = match xml_value.try_convert_ref(expected_type) {
                 // In this case, the property descriptor disagreed with the type
                 // in the file, but there was a conversion available.
-                RbxValueConversion::Converted(value) => value,
+                TodoValueConversionType::Converted(value) => value,
 
                 // The property descriptor agreed with the type from the file,
                 // or the type in the descriptor was unknown and the
                 // deserializer is configured to ignore those issues
-                RbxValueConversion::Unnecessary => xml_value,
+                TodoValueConversionType::Unnecessary => xml_value,
 
                 // The property descriptor disagreed, and there was no
                 // conversion available. This is always an error.
-                RbxValueConversion::Failed => {
+                TodoValueConversionType::Failed => {
                     return Err(
                         reader.error(DecodeErrorKind::UnsupportedPropertyConversion {
                             class_name: class_name.clone(),
-                            property_name: descriptor.name().to_string(),
+                            property_name: descriptor.name.to_string(),
                             expected_type,
-                            actual_type: xml_value.get_type(),
+                            actual_type: xml_value.ty(),
                         }),
                     );
                 }
             };
 
-            props.insert(descriptor.name().to_string(), value);
+            props.insert(descriptor.name.to_string(), value);
         } else {
             match state.options.property_behavior {
                 DecodePropertyBehavior::IgnoreUnknown => {

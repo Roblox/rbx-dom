@@ -1,7 +1,7 @@
 [package]
 name = "rbx_xml"
 description = "Weakly-typed Roblox DOM implementation for Rust"
-version = "0.11.4"
+version = "0.12.0-dev"
 license = "MIT"
 documentation = "https://docs.rs/rbx_xml"
 homepage = "https://github.com/rojo-rbx/rbx-dom"
@@ -13,8 +13,9 @@ edition = "2018"
 [dependencies]
 base64 = "0.11.0"
 log = "0.4.6"
-rbx_dom_weak = "1.10.0"
-rbx_reflection = "3.3.408"
+rbx_dom_weak = { package = "rbx_dom_weak2", path = "../rbx_dom_weak-v2" }
+rbx_reflection = { path = "../rbx_reflection" }
+rbx_reflection_database = { path = "../rbx_reflection_database" }
 xml-rs = "0.8.0"
 
 [dev-dependencies]

@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 
-use rbx_dom_weak::{NumberSequence, NumberSequenceKeypoint, RbxValue};
+use rbx_dom_weak::types::{NumberSequence, NumberSequenceKeypoint};
 
 use crate::{
     core::XmlType,
@@ -9,19 +9,11 @@ use crate::{
     serializer_core::{XmlEventWriter, XmlWriteEvent},
 };
 
-pub struct NumberSequenceType;
-
-impl XmlType<NumberSequence> for NumberSequenceType {
+impl XmlType for NumberSequence {
     const XML_TAG_NAME: &'static str = "NumberSequence";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &NumberSequence,
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-
-        for keypoint in &value.keypoints {
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        for keypoint in &self.keypoints {
             writer.write_characters(keypoint.time)?;
             writer.write(XmlWriteEvent::characters(" "))?;
             writer.write_characters(keypoint.value)?;
@@ -30,14 +22,10 @@ impl XmlType<NumberSequence> for NumberSequenceType {
             writer.write(XmlWriteEvent::characters(" "))?;
         }
 
-        writer.write(XmlWriteEvent::end_element())?;
-
         Ok(())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
         let contents = reader.read_characters()?;
         let mut pieces = contents
             .split(" ")
@@ -73,11 +61,7 @@ impl XmlType<NumberSequence> for NumberSequenceType {
             )));
         }
 
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::NumberSequence {
-            value: NumberSequence { keypoints },
-        })
+        Ok(NumberSequence { keypoints })
     }
 }
 
@@ -89,7 +73,7 @@ mod test {
 
     #[test]
     fn round_trip_number_sequence() {
-        let test_input = NumberSequence {
+        test_util::test_xml_round_trip(&NumberSequence {
             keypoints: vec![
                 NumberSequenceKeypoint {
                     time: 0.0,
@@ -102,44 +86,35 @@ mod test {
                     envelope: 13.0,
                 },
             ],
-        };
-
-        test_util::test_xml_round_trip::<NumberSequenceType, _>(
-            &test_input,
-            RbxValue::NumberSequence {
-                value: test_input.clone(),
-            },
-        );
+        });
     }
 
     #[test]
     fn deserialize_number_sequence() {
-        test_util::test_xml_deserialize::<NumberSequenceType, _>(
+        test_util::test_xml_deserialize(
             r#"
                 <NumberSequence name="foo">0 10.5 11.5 1 12 13 </NumberSequence>
             "#,
-            RbxValue::NumberSequence {
-                value: NumberSequence {
-                    keypoints: vec![
-                        NumberSequenceKeypoint {
-                            time: 0.0,
-                            value: 10.5,
-                            envelope: 11.5,
-                        },
-                        NumberSequenceKeypoint {
-                            time: 1.0,
-                            value: 12.0,
-                            envelope: 13.0,
-                        },
-                    ],
-                },
+            &NumberSequence {
+                keypoints: vec![
+                    NumberSequenceKeypoint {
+                        time: 0.0,
+                        value: 10.5,
+                        envelope: 11.5,
+                    },
+                    NumberSequenceKeypoint {
+                        time: 1.0,
+                        value: 12.0,
+                        envelope: 13.0,
+                    },
+                ],
             },
         );
     }
 
     #[test]
     fn serialize_number_sequence() {
-        test_util::test_xml_serialize::<NumberSequenceType, _>(
+        test_util::test_xml_serialize(
             r#"
                 <NumberSequence name="foo">0 10.5 11.5 1 12 13 </NumberSequence>
             "#,

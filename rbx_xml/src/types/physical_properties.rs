@@ -1,78 +1,55 @@
 use std::io::{Read, Write};
 
-use rbx_dom_weak::{PhysicalProperties, RbxValue};
+use rbx_dom_weak::types::{CustomPhysicalProperties, PhysicalProperties};
 
 use crate::{
     core::XmlType,
     deserializer_core::XmlEventReader,
-    error::{DecodeError, DecodeErrorKind, EncodeError},
-    serializer_core::{XmlEventWriter, XmlWriteEvent},
+    error::{DecodeError, EncodeError},
+    serializer_core::XmlEventWriter,
 };
 
-pub struct PhysicalPropertiesType;
-
-impl XmlType<Option<PhysicalProperties>> for PhysicalPropertiesType {
+impl XmlType for PhysicalProperties {
     const XML_TAG_NAME: &'static str = "PhysicalProperties";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &Option<PhysicalProperties>,
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-
-        match value {
-            Some(properties) => {
-                writer.write_tag_characters("CustomPhysics", "true")?;
-                writer.write_tag_characters_f32("Density", properties.density)?;
-                writer.write_tag_characters_f32("Friction", properties.friction)?;
-                writer.write_tag_characters_f32("Elasticity", properties.elasticity)?;
-                writer.write_tag_characters_f32("FrictionWeight", properties.friction_weight)?;
-                writer
-                    .write_tag_characters_f32("ElasticityWeight", properties.elasticity_weight)?;
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        match self {
+            PhysicalProperties::Custom(properties) => {
+                writer.write_value_in_tag(&true, "CustomPhysics")?;
+                writer.write_value_in_tag(&properties.density, "Density")?;
+                writer.write_value_in_tag(&properties.friction, "Friction")?;
+                writer.write_value_in_tag(&properties.elasticity, "Elasticity")?;
+                writer.write_value_in_tag(&properties.friction_weight, "FrictionWeight")?;
+                writer.write_value_in_tag(&properties.elasticity_weight, "ElasticityWeight")?;
             }
-            None => {
-                writer.write_tag_characters("CustomPhysics", "false")?;
+            PhysicalProperties::Default => {
+                writer.write_value_in_tag(&false, "CustomPhysics")?;
             }
         }
-
-        writer.write(XmlWriteEvent::end_element())?;
 
         Ok(())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
+        let has_custom_physics: bool = reader.read_value_in_tag("CustomPhysics")?;
 
-        let has_custom_physics = reader.read_tag_contents("CustomPhysics")?;
+        if has_custom_physics {
+            let density: f32 = reader.read_value_in_tag("Density")?;
+            let friction: f32 = reader.read_value_in_tag("Friction")?;
+            let elasticity: f32 = reader.read_value_in_tag("Elasticity")?;
+            let friction_weight: f32 = reader.read_value_in_tag("FrictionWeight")?;
+            let elasticity_weight: f32 = reader.read_value_in_tag("ElasticityWeight")?;
 
-        let value = match has_custom_physics.as_str() {
-            "true" => {
-                let density: f32 = reader.read_tag_contents_f32("Density")?;
-                let friction: f32 = reader.read_tag_contents_f32("Friction")?;
-                let elasticity: f32 = reader.read_tag_contents_f32("Elasticity")?;
-                let friction_weight: f32 = reader.read_tag_contents_f32("FrictionWeight")?;
-                let elasticity_weight: f32 = reader.read_tag_contents_f32("ElasticityWeight")?;
-
-                Some(PhysicalProperties {
-                    density,
-                    friction,
-                    elasticity,
-                    friction_weight,
-                    elasticity_weight,
-                })
-            }
-            "false" => None,
-            _ => {
-                return Err(reader.error(DecodeErrorKind::InvalidContent(
-                    "expected CustomPhysics to be true or false",
-                )));
-            }
-        };
-
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::PhysicalProperties { value })
+            Ok(PhysicalProperties::Custom(CustomPhysicalProperties {
+                density,
+                friction,
+                elasticity,
+                friction_weight,
+                elasticity_weight,
+            }))
+        } else {
+            Ok(PhysicalProperties::Default)
+        }
     }
 }
 
@@ -83,44 +60,36 @@ mod test {
     use crate::test_util;
 
     #[test]
-    fn round_trip_physical_properties_normal() {
-        test_util::test_xml_round_trip::<PhysicalPropertiesType, _>(
-            &None,
-            RbxValue::PhysicalProperties { value: None },
-        );
+    fn round_trip_physical_properties_default() {
+        test_util::test_xml_round_trip(&PhysicalProperties::Default);
     }
 
     #[test]
     fn round_trip_physical_properties_custom() {
-        let test_value = Some(PhysicalProperties {
+        test_util::test_xml_round_trip(&PhysicalProperties::Custom(CustomPhysicalProperties {
             density: 0.5,
             friction: 1.0,
             elasticity: 1.5,
             friction_weight: 2.0,
             elasticity_weight: 2.5,
-        });
-
-        test_util::test_xml_round_trip::<PhysicalPropertiesType, _>(
-            &test_value,
-            RbxValue::PhysicalProperties { value: test_value },
-        );
+        }));
     }
 
     #[test]
-    fn deserialize_physical_properties_normal() {
-        test_util::test_xml_deserialize::<PhysicalPropertiesType, _>(
+    fn deserialize_physical_properties_default() {
+        test_util::test_xml_deserialize(
             r#"
                 <PhysicalProperties name="CustomPhysicalProperties">
                     <CustomPhysics>false</CustomPhysics>
                 </PhysicalProperties>
             "#,
-            RbxValue::PhysicalProperties { value: None },
+            &PhysicalProperties::Default,
         );
     }
 
     #[test]
     fn deserialize_physical_properties_custom() {
-        test_util::test_xml_deserialize::<PhysicalPropertiesType, _>(
+        test_util::test_xml_deserialize(
             r#"
                 <PhysicalProperties name="CustomPhysicalProperties">
                     <CustomPhysics>true</CustomPhysics>
@@ -131,33 +100,31 @@ mod test {
                     <ElasticityWeight>2.5</ElasticityWeight>
                 </PhysicalProperties>
             "#,
-            RbxValue::PhysicalProperties {
-                value: Some(PhysicalProperties {
-                    density: 0.5,
-                    friction: 1.0,
-                    elasticity: 1.5,
-                    friction_weight: 2.0,
-                    elasticity_weight: 2.5,
-                }),
-            },
+            &PhysicalProperties::Custom(CustomPhysicalProperties {
+                density: 0.5,
+                friction: 1.0,
+                elasticity: 1.5,
+                friction_weight: 2.0,
+                elasticity_weight: 2.5,
+            }),
         );
     }
 
     #[test]
-    fn serialize_physical_properties_normal() {
-        test_util::test_xml_serialize::<PhysicalPropertiesType, _>(
+    fn serialize_physical_properties_default() {
+        test_util::test_xml_serialize(
             r#"
                 <PhysicalProperties name="foo">
                     <CustomPhysics>false</CustomPhysics>
                 </PhysicalProperties>
             "#,
-            &None,
+            &PhysicalProperties::Default,
         );
     }
 
     #[test]
     fn serialize_physical_properties_custom() {
-        test_util::test_xml_serialize::<PhysicalPropertiesType, _>(
+        test_util::test_xml_serialize(
             r#"
                 <PhysicalProperties name="foo">
                     <CustomPhysics>true</CustomPhysics>
@@ -168,7 +135,7 @@ mod test {
                     <ElasticityWeight>2.5</ElasticityWeight>
                 </PhysicalProperties>
             "#,
-            &Some(PhysicalProperties {
+            &PhysicalProperties::Custom(CustomPhysicalProperties {
                 density: 0.5,
                 friction: 1.0,
                 elasticity: 1.5,

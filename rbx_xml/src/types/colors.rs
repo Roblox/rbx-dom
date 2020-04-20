@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 
-use rbx_dom_weak::RbxValue;
+use rbx_dom_weak::types::{Color3, Color3uint8};
 
 use crate::{
     core::XmlType,
@@ -9,28 +9,18 @@ use crate::{
     serializer_core::{XmlEventWriter, XmlWriteEvent},
 };
 
-static TAG_NAMES: [&str; 3] = ["R", "G", "B"];
-
-pub struct Color3Type;
-
-impl XmlType<[f32; 3]> for Color3Type {
+impl XmlType for Color3 {
     const XML_TAG_NAME: &'static str = "Color3";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &[f32; 3],
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-        writer.write_tag_array_f32(value, &TAG_NAMES)?;
-        writer.write(XmlWriteEvent::end_element())?;
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        writer.write_value_in_tag(&self.r, "R")?;
+        writer.write_value_in_tag(&self.g, "G")?;
+        writer.write_value_in_tag(&self.b, "B")?;
 
         Ok(())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
         let contents = reader.read_characters()?;
 
         // Color3s have two possibilities:
@@ -38,79 +28,58 @@ impl XmlType<[f32; 3]> for Color3Type {
         // <R>, <G>, and <B> tags with floating-point values inside them.
         // First we have to find out if we have a packed int in.
         let value = if contents.is_empty() {
-            let r: f32 = reader.read_tag_contents_f32("R")?;
-            let g: f32 = reader.read_tag_contents_f32("G")?;
-            let b: f32 = reader.read_tag_contents_f32("B")?;
+            let r: f32 = reader.read_value_in_tag("R")?;
+            let g: f32 = reader.read_value_in_tag("G")?;
+            let b: f32 = reader.read_value_in_tag("B")?;
 
-            RbxValue::Color3 { value: [r, g, b] }
+            Color3::new(r, g, b)
         } else {
             let packed_value: u32 = contents.parse().map_err(|e| reader.error(e))?;
 
-            let [r, g, b] = decode_packed_color3(packed_value)?;
+            let unpacked = decode_packed_color3(packed_value)?;
 
-            RbxValue::Color3 {
-                // floating-point Color3s go from 0 to 1 instead of 0 to 255
-                value: [
-                    f32::from(r) / 255.0,
-                    f32::from(g) / 255.0,
-                    f32::from(b) / 255.0,
-                ],
-            }
+            Color3::new(
+                f32::from(unpacked.r) / 255.0,
+                f32::from(unpacked.g) / 255.0,
+                f32::from(unpacked.b) / 255.0,
+            )
         };
-
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
 
         Ok(value)
     }
 }
 
-pub struct Color3uint8Type;
-
-impl XmlType<[u8; 3]> for Color3uint8Type {
+impl XmlType for Color3uint8 {
     const XML_TAG_NAME: &'static str = "Color3uint8";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &[u8; 3],
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-
-        let encoded = encode_packed_color3(*value);
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        let encoded = encode_packed_color3(*self);
         writer.write(XmlWriteEvent::characters(&encoded.to_string()))?;
-
-        writer.write(XmlWriteEvent::end_element())?;
 
         Ok(())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
         // Color3uint8s are stored as packed u32s.
         let content = reader.read_characters()?;
         let packed_value: u32 = content.parse().map_err(|e| reader.error(e))?;
 
-        let value = RbxValue::Color3uint8 {
-            value: decode_packed_color3(packed_value)?,
-        };
-
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
+        let value = decode_packed_color3(packed_value)?;
 
         Ok(value)
     }
 }
 
-fn encode_packed_color3(source: [u8; 3]) -> u32 {
-    let [r, g, b] = source;
+fn encode_packed_color3(source: Color3uint8) -> u32 {
+    let Color3uint8 { r, g, b } = source;
 
     (b as u32) + ((g as u32) << 8) + ((r as u32) << 16)
 }
 
-fn decode_packed_color3(packed_color: u32) -> Result<[u8; 3], DecodeError> {
+fn decode_packed_color3(packed_color: u32) -> Result<Color3uint8, DecodeError> {
     let r = (packed_color >> 16) & 0xFF;
     let g = (packed_color >> 8) & 0xFF;
     let b = packed_color & 0xFF;
 
-    Ok([r as u8, g as u8, b as u8])
+    Ok(Color3uint8::new(r as u8, g as u8, b as u8))
 }

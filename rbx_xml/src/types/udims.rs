@@ -1,84 +1,53 @@
 use std::io::{Read, Write};
 
-use rbx_dom_weak::RbxValue;
+use rbx_dom_weak::types::{UDim, UDim2};
 
 use crate::{
     core::XmlType,
     deserializer_core::XmlEventReader,
     error::{DecodeError, EncodeError},
-    serializer_core::{XmlEventWriter, XmlWriteEvent},
+    serializer_core::XmlEventWriter,
 };
 
-pub struct UDimType;
-type UDimValue = (f32, i32);
-
-impl XmlType<UDimValue> for UDimType {
+impl XmlType for UDim {
     const XML_TAG_NAME: &'static str = "UDim";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &UDimValue,
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-
-        writer.write_tag_characters_f32("S", value.0)?;
-        writer.write_tag_characters("O", value.1)?;
-
-        writer.write(XmlWriteEvent::end_element())?;
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        writer.write_value_in_tag(&self.scale, "S")?;
+        writer.write_value_in_tag(&self.offset, "O")?;
 
         Ok(())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
+        let scale: f32 = reader.read_value_in_tag("S")?;
+        let offset: i32 = reader.read_value_in_tag("O")?;
 
-        let scale: f32 = reader.read_tag_contents_f32("S")?;
-        let offset: i32 = reader.read_tag_contents_parse("O")?;
-
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::UDim {
-            value: (scale, offset),
-        })
+        Ok(UDim { scale, offset })
     }
 }
 
-pub struct UDim2Type;
-type UDim2Value = (f32, i32, f32, i32);
-
-impl XmlType<UDim2Value> for UDim2Type {
+impl XmlType for UDim2 {
     const XML_TAG_NAME: &'static str = "UDim2";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &UDim2Value,
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-
-        writer.write_tag_characters_f32("XS", value.0)?;
-        writer.write_tag_characters("XO", value.1)?;
-        writer.write_tag_characters_f32("YS", value.2)?;
-        writer.write_tag_characters("YO", value.3)?;
-
-        writer.write(XmlWriteEvent::end_element())?;
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        writer.write_value_in_tag(&self.x.scale, "XS")?;
+        writer.write_value_in_tag(&self.x.offset, "XO")?;
+        writer.write_value_in_tag(&self.y.scale, "YS")?;
+        writer.write_value_in_tag(&self.y.offset, "YO")?;
 
         Ok(())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
+        let x_scale: f32 = reader.read_value_in_tag("XS")?;
+        let x_offset: i32 = reader.read_value_in_tag("XO")?;
+        let y_scale: f32 = reader.read_value_in_tag("YS")?;
+        let y_offset: i32 = reader.read_value_in_tag("YO")?;
 
-        let x_scale: f32 = reader.read_tag_contents_f32("XS")?;
-        let x_offset: i32 = reader.read_tag_contents_parse("XO")?;
-        let y_scale: f32 = reader.read_tag_contents_f32("YS")?;
-        let y_offset: i32 = reader.read_tag_contents_parse("YO")?;
-
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::UDim2 {
-            value: (x_scale, x_offset, y_scale, y_offset),
+        Ok(UDim2 {
+            x: UDim::new(x_scale, x_offset),
+            y: UDim::new(y_scale, y_offset),
         })
     }
 }
@@ -91,40 +60,30 @@ mod test {
 
     #[test]
     fn round_trip_udim() {
-        let test_input = (0.5, 1);
-
-        test_util::test_xml_round_trip::<UDimType, _>(
-            &test_input,
-            RbxValue::UDim { value: test_input },
-        );
+        test_util::test_xml_round_trip(&UDim::new(0.5, 1));
     }
 
     #[test]
     fn round_trip_udim2() {
-        let test_input = (0.5, 1, 1.5, 2);
-
-        test_util::test_xml_round_trip::<UDim2Type, _>(
-            &test_input,
-            RbxValue::UDim2 { value: test_input },
-        );
+        test_util::test_xml_round_trip(&UDim2::new(UDim::new(0.5, 1), UDim::new(1.5, 2)));
     }
 
     #[test]
     fn de_udim() {
-        test_util::test_xml_deserialize::<UDimType, _>(
+        test_util::test_xml_deserialize(
             r#"
                 <UDim>
                     <S>0.5</S>
                     <O>1</O>
                 </UDim>
             "#,
-            RbxValue::UDim { value: (0.5, 1) },
+            &UDim::new(0.5, 1),
         );
     }
 
     #[test]
     fn de_udim2() {
-        test_util::test_xml_deserialize::<UDim2Type, _>(
+        test_util::test_xml_deserialize(
             r#"
                 <UDim2>
                     <XS>0.5</XS>
@@ -133,9 +92,7 @@ mod test {
                     <YO>2</YO>
                 </UDim2>
             "#,
-            RbxValue::UDim2 {
-                value: (0.5, 1, 1.5, 2),
-            },
+            &UDim2::new(UDim::new(0.5, 1), UDim::new(1.5, 2)),
         );
     }
 }

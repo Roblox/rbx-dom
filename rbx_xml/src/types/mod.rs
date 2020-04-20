@@ -21,14 +21,18 @@ mod physical_properties;
 mod ray;
 mod rect;
 mod referent;
-mod shared_string;
+// mod shared_string;
 mod strings;
 mod udims;
 mod vectors;
 
 use std::io::{Read, Write};
 
-use rbx_dom_weak::{RbxId, RbxValue};
+use rbx_dom_weak::types::{
+    BinaryString, CFrame, Color3, Color3uint8, ColorSequence, Content, EnumValue, NumberRange,
+    NumberSequence, PhysicalProperties, Ray, Rect, Ref, Variant, Vector2, Vector2int16, Vector3,
+    Vector3int16,
+};
 
 use crate::{
     core::XmlType,
@@ -39,16 +43,13 @@ use crate::{
     serializer_core::XmlEventWriter,
 };
 
-use self::{
-    referent::{read_ref, write_ref},
-    shared_string::{read_shared_string, write_shared_string},
-};
+use self::referent::{read_ref, write_ref};
 
 /// The `declare_rbx_types` macro generates the two big match statements that
 /// rbx_xml uses to read/write values inside of `read_value_xml` and
 /// `write_value_xml`.
 macro_rules! declare_rbx_types {
-    { $($typedef: path => $rbx_type: ident),* } => {
+    { $($variant_name: ident : $inner_type: ident,)* } => {
 
         /// Reads a Roblox property value with the given type from the XML event
         /// stream.
@@ -56,17 +57,17 @@ macro_rules! declare_rbx_types {
             reader: &mut XmlEventReader<R>,
             state: &mut ParseState,
             xml_type_name: &str,
-            instance_id: RbxId,
+            instance_id: Ref,
             property_name: &str,
-        ) -> Result<RbxValue, DecodeError> {
+        ) -> Result<Variant, DecodeError> {
             match xml_type_name {
-                $(<$typedef>::XML_TAG_NAME => <$typedef>::read_xml(reader),)*
+                $(<$inner_type>::XML_TAG_NAME => Ok(Variant::$variant_name(<$inner_type>::read_outer_xml(reader)?)),)*
 
                 // Protected strings are only read, never written
-                self::strings::ProtectedStringType::XML_TAG_NAME => self::strings::ProtectedStringType::read_xml(reader),
+                // self::strings::ProtectedStringType::XML_TAG_NAME => self::strings::ProtectedStringType::read_xml(reader),
 
-                self::referent::XML_TAG_NAME => read_ref(reader, instance_id, property_name, state),
-                self::shared_string::XML_TAG_NAME => read_shared_string(reader, instance_id, property_name, state),
+                self::referent::XML_TAG_NAME => Ok(Variant::Ref(read_ref(reader, instance_id, property_name, state)?)),
+                // self::shared_string::XML_TAG_NAME => read_shared_string(reader, instance_id, property_name, state),
 
                 _ => {
                     Err(reader.error(DecodeErrorKind::UnknownPropertyType(xml_type_name.to_owned())))
@@ -80,21 +81,21 @@ macro_rules! declare_rbx_types {
             writer: &mut XmlEventWriter<W>,
             state: &mut EmitState,
             xml_property_name: &str,
-            value: &RbxValue,
+            value: &Variant,
         ) -> Result<(), EncodeError> {
             match value {
-                $(RbxValue::$rbx_type { value } => <$typedef>::write_xml(writer, xml_property_name, value),)*
+                $(Variant::$variant_name(value) => value.write_outer_xml(xml_property_name, writer),)*
 
                 // BrickColor values just encode as 32-bit ints, and have no
                 // unique appearance for reading.
-                RbxValue::BrickColor { value } =>
-                    self::numbers::Int32Type::write_xml(writer, xml_property_name, &(*value as i32)),
+                // Variant::BrickColor(value) =>
+                //     self::numbers::Int32Type::write_xml(writer, xml_property_name, &(*value as i32)),
 
-                RbxValue::Ref { value } => write_ref(writer, xml_property_name, value, state),
-                RbxValue::SharedString { value } => write_shared_string(writer, xml_property_name, value, state),
+                Variant::Ref(value) => write_ref(writer, xml_property_name, *value, state),
+                // Variant::SharedString(value) => write_shared_string(writer, xml_property_name, value, state),
 
                 unknown => {
-                    Err(writer.error(EncodeErrorKind::UnsupportedPropertyType(unknown.get_type())))
+                    Err(writer.error(EncodeErrorKind::UnsupportedPropertyType(unknown.ty())))
                 },
             }
         }
@@ -102,28 +103,28 @@ macro_rules! declare_rbx_types {
 }
 
 declare_rbx_types! {
-    self::binary_string::BinaryStringType => BinaryString,
-    self::bool::BoolType => Bool,
-    self::cframe::CFrameType => CFrame,
-    self::color_sequence::ColorSequenceType => ColorSequence,
-    self::colors::Color3Type => Color3,
-    self::colors::Color3uint8Type => Color3uint8,
-    self::content::ContentType => Content,
-    self::enumeration::EnumType => Enum,
-    self::number_range::NumberRangeType => NumberRange,
-    self::number_sequence::NumberSequenceType => NumberSequence,
-    self::numbers::Float32Type => Float32,
-    self::numbers::Float64Type => Float64,
-    self::numbers::Int32Type => Int32,
-    self::numbers::Int64Type => Int64,
-    self::physical_properties::PhysicalPropertiesType => PhysicalProperties,
-    self::ray::RayType => Ray,
-    self::rect::RectType => Rect,
-    self::strings::StringType => String,
-    self::udims::UDim2Type => UDim2,
-    self::udims::UDimType => UDim,
-    self::vectors::Vector2Type => Vector2,
-    self::vectors::Vector2int16Type => Vector2int16,
-    self::vectors::Vector3Type => Vector3,
-    self::vectors::Vector3int16Type => Vector3int16
+    BinaryString: BinaryString,
+    Bool: bool,
+    CFrame: CFrame,
+    String: String,
+    ColorSequence: ColorSequence,
+    Color3: Color3,
+    Color3uint8: Color3uint8,
+    Content: Content,
+    EnumValue: EnumValue,
+    NumberRange: NumberRange,
+    NumberSequence: NumberSequence,
+    Float32: f32,
+    Float64: f64,
+    Int32: i32,
+    Int64: i64,
+    PhysicalProperties: PhysicalProperties,
+    Ray: Ray,
+    Rect: Rect,
+    // self::udims::UDim2Type => UDim2,
+    // self::udims::UDimType => UDim,
+    Vector2: Vector2,
+    Vector2int16: Vector2int16,
+    Vector3: Vector3,
+    Vector3int16: Vector3int16,
 }

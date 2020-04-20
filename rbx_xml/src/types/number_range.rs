@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 
-use rbx_dom_weak::RbxValue;
+use rbx_dom_weak::types::NumberRange;
 
 use crate::{
     core::XmlType,
@@ -9,31 +9,19 @@ use crate::{
     serializer_core::{XmlEventWriter, XmlWriteEvent},
 };
 
-pub struct NumberRangeType;
-
-impl XmlType<(f32, f32)> for NumberRangeType {
+impl XmlType for NumberRange {
     const XML_TAG_NAME: &'static str = "NumberRange";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &(f32, f32),
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-
-        writer.write_characters(value.0)?;
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        writer.write_characters(self.min)?;
         writer.write(XmlWriteEvent::characters(" "))?;
-        writer.write_characters(value.1)?;
+        writer.write_characters(self.max)?;
         writer.write(XmlWriteEvent::characters(" "))?;
-
-        writer.write(XmlWriteEvent::end_element())?;
 
         Ok(())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
         let contents = reader.read_characters()?;
         let mut pieces = contents
             .split(" ")
@@ -53,9 +41,7 @@ impl XmlType<(f32, f32)> for NumberRangeType {
             Some(_) => return Err(reader.error(DecodeErrorKind::InvalidContent("too many values"))),
         }
 
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::NumberRange { value: (min, max) })
+        Ok(NumberRange { min, max })
     }
 }
 
@@ -67,33 +53,35 @@ mod test {
 
     #[test]
     fn round_trip_number_range() {
-        let test_input = (103.5, -30.0);
-
-        test_util::test_xml_round_trip::<NumberRangeType, _>(
-            &test_input,
-            RbxValue::NumberRange { value: test_input },
-        );
+        test_util::test_xml_round_trip(&NumberRange {
+            min: -30.0,
+            max: 103.5,
+        });
     }
 
     #[test]
     fn deserialize_number_range() {
-        test_util::test_xml_deserialize::<NumberRangeType, _>(
+        test_util::test_xml_deserialize(
             r#"
                 <NumberRange name="foo">80.5 -30 </NumberRange>
             "#,
-            RbxValue::NumberRange {
-                value: (80.5, -30.0),
+            &NumberRange {
+                min: 80.5,
+                max: -30.0,
             },
         );
     }
 
     #[test]
     fn serialize_number_range() {
-        test_util::test_xml_serialize::<NumberRangeType, _>(
+        test_util::test_xml_serialize(
             r#"
                 <NumberRange name="foo">80.5 -30 </NumberRange>
             "#,
-            &(80.5, -30.0),
+            &NumberRange {
+                min: 80.5,
+                max: -30.0,
+            },
         );
     }
 }

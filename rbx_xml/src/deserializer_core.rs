@@ -1,9 +1,12 @@
-use std::{io::Read, str::FromStr};
+use std::io::Read;
 
 use log::trace;
 use xml::{attribute::OwnedAttribute, reader::ParserConfig};
 
-use crate::error::{DecodeError as NewDecodeError, DecodeErrorKind};
+use crate::{
+    core::XmlType,
+    error::{DecodeError as NewDecodeError, DecodeErrorKind},
+};
 
 pub use xml::reader::Error as XmlReadError;
 pub use xml::reader::XmlEvent as XmlReadEvent;
@@ -254,44 +257,22 @@ impl<R: Read> XmlEventReader<R> {
         Ok(contents)
     }
 
-    pub(crate) fn read_tag_contents_parse<T>(
-        &mut self,
-        expected_name: &str,
-    ) -> Result<T, NewDecodeError>
-    where
-        T: FromStr,
-        <T as FromStr>::Err: Into<DecodeErrorKind>,
-    {
-        let contents = self.read_tag_contents(expected_name)?;
-        contents.parse().map_err(|e| self.error(e))
+    /// Read a value that implements XmlType.
+    pub(crate) fn read_value<T: XmlType>(&mut self) -> Result<T, NewDecodeError> {
+        T::read_xml(self)
     }
 
-    /// Reads a `f32` value, but using Roblox's INF, -INF, and NAN values
-    pub(crate) fn read_tag_contents_f32(
+    /// Read a value that implements XmlType, expecting it to be enclosed in an
+    /// outer tag.
+    pub(crate) fn read_value_in_tag<T: XmlType>(
         &mut self,
-        expected_name: &str,
-    ) -> Result<f32, NewDecodeError> {
-        let contents = self.read_tag_contents(expected_name)?;
-        Ok(match contents.as_str() {
-            "INF" => std::f32::INFINITY,
-            "-INF" => std::f32::NEG_INFINITY,
-            "NAN" => std::f32::NAN,
-            number => number.parse().map_err(|e| self.error(e))?,
-        })
-    }
+        tag_name: &str,
+    ) -> Result<T, NewDecodeError> {
+        self.expect_start_with_name(tag_name)?;
+        let value = self.read_value()?;
+        self.expect_end_with_name(tag_name)?;
 
-    /// Reads a `f64` value, but using Roblox's INF, -INF, and NAN values
-    pub(crate) fn read_tag_contents_f64(
-        &mut self,
-        expected_name: &str,
-    ) -> Result<f64, NewDecodeError> {
-        let contents = self.read_tag_contents(expected_name)?;
-        Ok(match contents.as_str() {
-            "INF" => std::f64::INFINITY,
-            "-INF" => std::f64::NEG_INFINITY,
-            "NAN" => std::f64::NAN,
-            number => number.parse().map_err(|e| self.error(e))?,
-        })
+        Ok(value)
     }
 
     /// Consume events from the iterator until we reach the end of the next tag.

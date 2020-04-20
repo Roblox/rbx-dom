@@ -1,9 +1,13 @@
 use std::{borrow::Cow, collections::HashMap, io::Write};
 
-use rbx_dom_weak::{RbxId, RbxTree, RbxValue, RbxValueConversion, RbxValueType, SharedString};
-use rbx_reflection::RbxPropertyTypeDescriptor;
+use rbx_dom_weak::{
+    types::{Ref, SharedString, Variant, VariantType},
+    WeakDom,
+};
+use rbx_reflection::PropertyType;
 
 use crate::{
+    compat::{TodoValueConversion, TodoValueConversionType},
     core::find_serialized_property_descriptor,
     error::{EncodeError as NewEncodeError, EncodeErrorKind},
     types::write_value_xml,
@@ -13,8 +17,8 @@ use crate::serializer_core::{XmlEventWriter, XmlWriteEvent};
 
 pub fn encode_internal<W: Write>(
     output: W,
-    tree: &RbxTree,
-    ids: &[RbxId],
+    tree: &WeakDom,
+    ids: &[Ref],
     options: EncodeOptions,
 ) -> Result<(), NewEncodeError> {
     let mut writer = XmlEventWriter::from_output(output);
@@ -107,7 +111,7 @@ pub struct EmitState {
 
     /// A map of IDs written so far to the generated referent that they use.
     /// This map is used to correctly emit Ref properties.
-    referent_map: HashMap<RbxId, u32>,
+    referent_map: HashMap<Ref, u32>,
 
     /// The referent value that will be used for emitting the next instance.
     next_referent: u32,
@@ -127,7 +131,7 @@ impl EmitState {
         }
     }
 
-    pub fn map_id(&mut self, id: RbxId) -> u32 {
+    pub fn map_id(&mut self, id: Ref) -> u32 {
         match self.referent_map.get(&id) {
             Some(&value) => value,
             None => {
@@ -140,7 +144,8 @@ impl EmitState {
     }
 
     pub fn add_shared_string(&mut self, value: SharedString) {
-        self.shared_strings_to_emit.insert(value.md5_hash(), value);
+        // FIXME
+        // self.shared_strings_to_emit.insert(value.md5_hash(), value);
     }
 }
 
@@ -151,16 +156,16 @@ impl EmitState {
 fn serialize_instance<'a, W: Write>(
     writer: &mut XmlEventWriter<W>,
     state: &mut EmitState,
-    tree: &'a RbxTree,
-    id: RbxId,
-    property_buffer: &mut Vec<(&'a String, &'a RbxValue)>,
+    tree: &'a WeakDom,
+    id: Ref,
+    property_buffer: &mut Vec<(&'a String, &'a Variant)>,
 ) -> Result<(), NewEncodeError> {
-    let instance = tree.get_instance(id).unwrap();
+    let instance = tree.get_by_ref(id).unwrap();
     let mapped_id = state.map_id(id);
 
     writer.write(
         XmlWriteEvent::start_element("Item")
-            .attr("class", &instance.class_name)
+            .attr("class", &instance.class)
             .attr("referent", &mapped_id.to_string()),
     )?;
 
@@ -170,9 +175,7 @@ fn serialize_instance<'a, W: Write>(
         writer,
         state,
         "Name",
-        &RbxValue::String {
-            value: instance.name.clone(),
-        },
+        &Variant::String(instance.name.clone()),
     )?;
 
     // Move references to our properties into property_buffer so we can sort
@@ -182,63 +185,36 @@ fn serialize_instance<'a, W: Write>(
 
     for (property_name, value) in property_buffer.drain(..) {
         let maybe_serialized_descriptor = if state.options.use_reflection() {
-            find_serialized_property_descriptor(&instance.class_name, property_name)
+            find_serialized_property_descriptor(&instance.class, property_name)
         } else {
             None
         };
 
         if let Some(serialized_descriptor) = maybe_serialized_descriptor {
-            let value_type = match serialized_descriptor.property_type() {
-                RbxPropertyTypeDescriptor::Data(value_type) => *value_type,
-                RbxPropertyTypeDescriptor::Enum(_enum_name) => RbxValueType::Enum,
-                RbxPropertyTypeDescriptor::UnimplementedType(_) => {
-                    // Properties with types that aren't implemented yet are
-                    // effectively unknown properties, so we handle them
-                    // similarly.
-                    match state.options.property_behavior {
-                        EncodePropertyBehavior::IgnoreUnknown => {
-                            continue;
-                        }
-                        EncodePropertyBehavior::WriteUnknown => {
-                            // This conversion will be returned into a no-op by
-                            // try_convert_ref
-                            value.get_type()
-                        }
-                        EncodePropertyBehavior::ErrorOnUnknown => {
-                            return Err(writer.error(EncodeErrorKind::UnknownProperty {
-                                class_name: instance.class_name.clone(),
-                                property_name: property_name.clone(),
-                            }));
-                        }
-                        EncodePropertyBehavior::NoReflection
-                        | EncodePropertyBehavior::__Nonexhaustive => {
-                            unreachable!();
-                        }
-                    }
-                }
+            let value_type = match &serialized_descriptor.value_type {
+                PropertyType::Data(value_type) => *value_type,
+                PropertyType::Enum(_enum_name) => VariantType::EnumValue,
+
+                // FIXME?
+                _ => unimplemented!(),
             };
 
             let converted_value = match value.try_convert_ref(value_type) {
-                RbxValueConversion::Converted(converted) => Cow::Owned(converted),
-                RbxValueConversion::Unnecessary => Cow::Borrowed(value),
-                RbxValueConversion::Failed => {
+                TodoValueConversionType::Converted(converted) => Cow::Owned(converted),
+                TodoValueConversionType::Unnecessary => Cow::Borrowed(value),
+                TodoValueConversionType::Failed => {
                     return Err(
                         writer.error(EncodeErrorKind::UnsupportedPropertyConversion {
-                            class_name: instance.class_name.clone(),
+                            class_name: instance.class.clone(),
                             property_name: property_name.to_string(),
                             expected_type: value_type,
-                            actual_type: value.get_type(),
+                            actual_type: value.ty(),
                         }),
                     )
                 }
             };
 
-            write_value_xml(
-                writer,
-                state,
-                &serialized_descriptor.name(),
-                &converted_value,
-            )?;
+            write_value_xml(writer, state, &serialized_descriptor.name, &converted_value)?;
         } else {
             match state.options.property_behavior {
                 EncodePropertyBehavior::IgnoreUnknown => {}
@@ -250,7 +226,7 @@ fn serialize_instance<'a, W: Write>(
                 }
                 EncodePropertyBehavior::ErrorOnUnknown => {
                     return Err(writer.error(EncodeErrorKind::UnknownProperty {
-                        class_name: instance.class_name.clone(),
+                        class_name: instance.class.clone(),
                         property_name: property_name.clone(),
                     }));
                 }
@@ -261,7 +237,7 @@ fn serialize_instance<'a, W: Write>(
 
     writer.write(XmlWriteEvent::end_element())?;
 
-    for child_id in instance.get_children_ids() {
+    for child_id in instance.children() {
         serialize_instance(writer, state, tree, *child_id, property_buffer)?;
     }
 
@@ -283,7 +259,8 @@ fn serialize_shared_strings<W: Write>(
     for value in state.shared_strings_to_emit.values() {
         writer.write(
             XmlWriteEvent::start_element("SharedString")
-                .attr("md5", &base64::encode(&value.md5_hash())),
+                // FIXME
+                // .attr("md5", &base64::encode(&value.md5_hash())),
         )?;
 
         writer.write_string(&base64::encode(value.data()))?;

@@ -4,7 +4,10 @@ use xml::writer::{EmitterConfig, EventWriter};
 
 pub use xml::writer::XmlEvent as XmlWriteEvent;
 
-use crate::error::{EncodeError as NewEncodeError, EncodeErrorKind};
+use crate::{
+    core::XmlType,
+    error::{EncodeError as NewEncodeError, EncodeErrorKind},
+};
 
 /// A wrapper around an xml-rs `EventWriter` as well as other state kept around
 /// for performantly emitting XML.
@@ -64,23 +67,18 @@ impl<W: Write> XmlEventWriter<W> {
         Ok(())
     }
 
-    /// Writes a `f32` value, but using Roblox's INF, -INF, and NAN values
-    #[inline]
-    pub fn write_characters_f32(&mut self, value: f32) -> Result<(), NewEncodeError> {
-        self.write_characters_f64(value as f64)
+    pub fn write_value<T: XmlType>(&mut self, value: &T) -> Result<(), NewEncodeError> {
+        value.write_xml(self)
     }
 
-    /// Writes a `f64` value, but using Roblox's INF, -INF, and NAN values
-    pub fn write_characters_f64(&mut self, value: f64) -> Result<(), NewEncodeError> {
-        if value == std::f64::INFINITY {
-            self.write_characters("INF")
-        } else if value == std::f64::NEG_INFINITY {
-            self.write_characters("-INF")
-        } else if value.is_nan() {
-            self.write_characters("NAN")
-        } else {
-            self.write_characters(value)
-        }
+    pub fn write_value_in_tag<T: XmlType>(
+        &mut self,
+        value: &T,
+        tag: &str,
+    ) -> Result<(), NewEncodeError> {
+        self.write(XmlWriteEvent::start_element(tag))?;
+        self.write_value(value)?;
+        self.write(XmlWriteEvent::end_element())
     }
 
     /// The same as `write_characters`, but wraps the characters in a tag with
@@ -92,16 +90,6 @@ impl<W: Write> XmlEventWriter<W> {
     ) -> Result<(), NewEncodeError> {
         self.write(XmlWriteEvent::start_element(tag))?;
         self.write_characters(value)?;
-        self.write(XmlWriteEvent::end_element())
-    }
-
-    pub fn write_tag_characters_f32(
-        &mut self,
-        tag: &str,
-        value: f32,
-    ) -> Result<(), NewEncodeError> {
-        self.write(XmlWriteEvent::start_element(tag))?;
-        self.write_characters_f32(value)?;
         self.write(XmlWriteEvent::end_element())
     }
 
@@ -117,20 +105,6 @@ impl<W: Write> XmlEventWriter<W> {
 
         for (index, component) in values.iter().enumerate() {
             self.write_tag_characters(tags[index], component)?;
-        }
-
-        Ok(())
-    }
-
-    pub fn write_tag_array_f32(
-        &mut self,
-        values: &[f32],
-        tags: &[&str],
-    ) -> Result<(), NewEncodeError> {
-        assert_eq!(values.len(), tags.len());
-
-        for (index, component) in values.iter().enumerate() {
-            self.write_tag_characters_f32(tags[index], *component)?;
         }
 
         Ok(())

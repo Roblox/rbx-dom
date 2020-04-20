@@ -1,38 +1,28 @@
 use std::io::{Read, Write};
 
-use rbx_dom_weak::RbxValue;
+use rbx_dom_weak::types::EnumValue;
 
 use crate::{
     core::XmlType,
     deserializer_core::XmlEventReader,
     error::{DecodeError, EncodeError},
-    serializer_core::{XmlEventWriter, XmlWriteEvent},
+    serializer_core::XmlEventWriter,
 };
 
-pub struct EnumType;
-
-impl XmlType<u32> for EnumType {
+impl XmlType for EnumValue {
     const XML_TAG_NAME: &'static str = "token";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &u32,
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-        writer.write_characters(*value)?;
-        writer.write(XmlWriteEvent::end_element())?;
-
-        Ok(())
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        writer.write_characters(self.to_u32())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
         let value: u32 = reader
-            .read_tag_contents(Self::XML_TAG_NAME)?
+            .read_characters()?
             .parse()
             .map_err(|e| reader.error(e))?;
 
-        Ok(RbxValue::Enum { value })
+        Ok(EnumValue::from_u32(value))
     }
 }
 
@@ -44,6 +34,6 @@ mod test {
 
     #[test]
     fn round_trip() {
-        test_util::test_xml_round_trip::<EnumType, _>(&4654321, RbxValue::Enum { value: 4654321 });
+        test_util::test_xml_round_trip(&EnumValue::from_u32(4654321));
     }
 }

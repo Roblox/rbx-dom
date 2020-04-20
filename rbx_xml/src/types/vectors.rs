@@ -1,134 +1,45 @@
 use std::io::{Read, Write};
 
-use rbx_dom_weak::RbxValue;
+use rbx_dom_weak::types::{Vector2, Vector2int16, Vector3, Vector3int16};
 
 use crate::{
     core::XmlType,
     deserializer_core::XmlEventReader,
     error::{DecodeError, EncodeError},
-    serializer_core::{XmlEventWriter, XmlWriteEvent},
+    serializer_core::XmlEventWriter,
 };
 
-static VECTOR2_TAGS: [&str; 2] = ["X", "Y"];
-static VECTOR3_TAGS: [&str; 3] = ["X", "Y", "Z"];
+macro_rules! impl_vector {
+    ( $vector: ident, $component: ident, ( $( $axis: ident : $label: literal ),* ) ) => {
+        impl XmlType for $vector {
+            const XML_TAG_NAME: &'static str = stringify!($vector);
 
-pub struct Vector2Type;
+            fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+                $(
+                    writer.write_value_in_tag(&self.$axis, $label)?;
+                )*
 
-impl XmlType<[f32; 2]> for Vector2Type {
-    const XML_TAG_NAME: &'static str = "Vector2";
+                Ok(())
+            }
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &[f32; 2],
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-        writer.write_tag_array_f32(value, &VECTOR2_TAGS)?;
-        writer.write(XmlWriteEvent::end_element())?;
+            fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
+                $(
+                    let $axis: $component = reader.read_value_in_tag($label)?;
+                )*
 
-        Ok(())
-    }
-
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
-        let x: f32 = reader.read_tag_contents_f32("X")?;
-        let y: f32 = reader.read_tag_contents_f32("Y")?;
-
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::Vector2 { value: [x, y] })
-    }
+                Ok($vector {
+                    $( $axis, )*
+                })
+            }
+        }
+    };
 }
 
-pub struct Vector2int16Type;
+impl_vector!(Vector2, f32, (x: "X", y: "Y"));
+impl_vector!(Vector2int16, i16, (x: "X", y: "Y"));
 
-impl XmlType<[i16; 2]> for Vector2int16Type {
-    const XML_TAG_NAME: &'static str = "Vector2int16";
-
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &[i16; 2],
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-        writer.write_tag_array(value, &VECTOR2_TAGS)?;
-        writer.write(XmlWriteEvent::end_element())?;
-
-        Ok(())
-    }
-
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
-        let x: i16 = reader.read_tag_contents_parse("X")?;
-        let y: i16 = reader.read_tag_contents_parse("Y")?;
-
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::Vector2int16 { value: [x, y] })
-    }
-}
-
-pub struct Vector3Type;
-
-impl XmlType<[f32; 3]> for Vector3Type {
-    const XML_TAG_NAME: &'static str = "Vector3";
-
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &[f32; 3],
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-        writer.write_tag_array_f32(value, &VECTOR3_TAGS)?;
-        writer.write(XmlWriteEvent::end_element())?;
-
-        Ok(())
-    }
-
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
-        let x: f32 = reader.read_tag_contents_f32("X")?;
-        let y: f32 = reader.read_tag_contents_f32("Y")?;
-        let z: f32 = reader.read_tag_contents_f32("Z")?;
-
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::Vector3 { value: [x, y, z] })
-    }
-}
-
-pub struct Vector3int16Type;
-
-impl XmlType<[i16; 3]> for Vector3int16Type {
-    const XML_TAG_NAME: &'static str = "Vector3int16";
-
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &[i16; 3],
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-        writer.write_tag_array(value, &VECTOR3_TAGS)?;
-        writer.write(XmlWriteEvent::end_element())?;
-
-        Ok(())
-    }
-
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
-        let x: i16 = reader.read_tag_contents_parse("X")?;
-        let y: i16 = reader.read_tag_contents_parse("Y")?;
-        let z: i16 = reader.read_tag_contents_parse("Z")?;
-
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::Vector3int16 { value: [x, y, z] })
-    }
-}
+impl_vector!(Vector3, f32, (x: "X", y: "Y", z: "Z"));
+impl_vector!(Vector3int16, i16, (x: "X", y: "Y", z: "Z"));
 
 #[cfg(test)]
 mod test {
@@ -138,41 +49,21 @@ mod test {
 
     #[test]
     fn round_trip_vector2() {
-        let test_input: [f32; 2] = [123.0, 456.0];
-
-        test_util::test_xml_round_trip::<Vector2Type, _>(
-            &test_input,
-            RbxValue::Vector2 { value: test_input },
-        );
+        test_util::test_xml_round_trip(&Vector2::new(123.0, 456.0));
     }
 
     #[test]
     fn round_trip_vector2int16() {
-        let test_input: [i16; 2] = [1234, 4567];
-
-        test_util::test_xml_round_trip::<Vector2int16Type, _>(
-            &test_input,
-            RbxValue::Vector2int16 { value: test_input },
-        );
+        test_util::test_xml_round_trip(&Vector2int16::new(1234, 4567));
     }
 
     #[test]
     fn round_trip_vector3() {
-        let test_input: [f32; 3] = [123.0, 456.0, 7890.0];
-
-        test_util::test_xml_round_trip::<Vector3Type, _>(
-            &test_input,
-            RbxValue::Vector3 { value: test_input },
-        );
+        test_util::test_xml_round_trip(&Vector3::new(123.0, 456.0, 7890.0));
     }
 
     #[test]
     fn round_trip_vector3int16() {
-        let test_input: [i16; 3] = [1234, 4567, 8913];
-
-        test_util::test_xml_round_trip::<Vector3int16Type, _>(
-            &test_input,
-            RbxValue::Vector3int16 { value: test_input },
-        );
+        test_util::test_xml_round_trip(&Vector3int16::new(1234, 4567, 8913));
     }
 }

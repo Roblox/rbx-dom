@@ -13,7 +13,7 @@
 //! These methods also have variants like [`from_str`][from_str] that let you
 //! pass in custom options.
 //!
-//! ```rust
+//! ```ignore
 //! # // FIXME: This test overflows its stack only as a doctest on Windows. :/
 //! # // see: https://github.com/rust-lang/rust/issues/60753
 //! #
@@ -50,7 +50,7 @@
 //! If you're decoding from a file, you'll want to do your own I/O buffering,
 //! like with [`BufReader`][BufReader]:
 //!
-//! ```rust,no_run
+//! ```ignore
 //! # fn main() -> Result<(), Box<std::error::Error>> {
 //! use std::{
 //!     io::BufReader,
@@ -63,30 +63,30 @@
 //! # }
 //! ```
 //!
-//! Note that the `RbxTree` instance returned by the rbx_xml decode methods will
+//! Note that the `WeakDom` instance returned by the rbx_xml decode methods will
 //! have a root instance with the class name `DataModel`. This is great for
 //! deserializing a place, but kind of strange for deserializing a model.
 //!
 //! Because models can have multiple instances at the top level, rbx_xml can't
-//! just return an `RbxTree` with your single instance at the top. Instead, the
+//! just return an `WeakDom` with your single instance at the top. Instead, the
 //! crate instead always creates a top-level `DataModel` instance which is
 //! pretty close to free.
 //!
 //! ## Serialization
-//! To serialize an existing `RbxTree` instance, use methods like
+//! To serialize an existing `WeakDom` instance, use methods like
 //! [`to_writer_default`][to_writer_default] or [`to_writer`][to_writer].
 //!
 //! For example, to re-save the place file we loaded above:
 //!
-//! ```rust,no_run
+//! ```ignore
 //! # fn main() -> Result<(), Box<std::error::Error>> {
 //! use std::{
 //!     io::BufWriter,
 //!     fs::File,
 //! };
-//! # use rbx_dom_weak::{RbxTree, RbxInstanceProperties};
+//! # use rbx_dom_weak::{WeakDom, RbxInstanceProperties};
 //!
-//! # let place = RbxTree::new(RbxInstanceProperties {
+//! # let place = WeakDom::new(RbxInstanceProperties {
 //! #   class_name: "DataModel".to_owned(),
 //! #   name: "DataModel".to_owned(),
 //! #   properties: Default::default(),
@@ -120,6 +120,8 @@
 
 #![deny(missing_docs)]
 
+mod compat;
+
 mod core;
 mod deserializer;
 mod deserializer_core;
@@ -133,7 +135,7 @@ mod test_util;
 
 use std::io::{Read, Write};
 
-use rbx_dom_weak::{RbxId, RbxTree};
+use rbx_dom_weak::{types::Ref, WeakDom};
 
 use crate::{deserializer::decode_internal, serializer::encode_internal};
 
@@ -145,24 +147,24 @@ pub use crate::{
 
 /// Decodes an XML-format model or place from something that implements the
 /// `std::io::Read` trait.
-pub fn from_reader<R: Read>(reader: R, options: DecodeOptions) -> Result<RbxTree, DecodeError> {
+pub fn from_reader<R: Read>(reader: R, options: DecodeOptions) -> Result<WeakDom, DecodeError> {
     decode_internal(reader, options)
 }
 
 /// Decodes an XML-format model or place from something that implements the
 /// `std::io::Read` trait using the default decoder options.
-pub fn from_reader_default<R: Read>(reader: R) -> Result<RbxTree, DecodeError> {
+pub fn from_reader_default<R: Read>(reader: R) -> Result<WeakDom, DecodeError> {
     decode_internal(reader, DecodeOptions::default())
 }
 
 /// Decodes an XML-format model or place from a string.
-pub fn from_str<S: AsRef<str>>(reader: S, options: DecodeOptions) -> Result<RbxTree, DecodeError> {
+pub fn from_str<S: AsRef<str>>(reader: S, options: DecodeOptions) -> Result<WeakDom, DecodeError> {
     decode_internal(reader.as_ref().as_bytes(), options)
 }
 
 /// Decodes an XML-format model or place from a string using the default decoder
 /// options.
-pub fn from_str_default<S: AsRef<str>>(reader: S) -> Result<RbxTree, DecodeError> {
+pub fn from_str_default<S: AsRef<str>>(reader: S) -> Result<WeakDom, DecodeError> {
     decode_internal(reader.as_ref().as_bytes(), DecodeOptions::default())
 }
 
@@ -170,8 +172,8 @@ pub fn from_str_default<S: AsRef<str>>(reader: S) -> Result<RbxTree, DecodeError
 /// writing to something that implements the `std::io::Write` trait.
 pub fn to_writer<W: Write>(
     writer: W,
-    tree: &RbxTree,
-    ids: &[RbxId],
+    tree: &WeakDom,
+    ids: &[Ref],
     options: EncodeOptions,
 ) -> Result<(), EncodeError> {
     encode_internal(writer, tree, ids, options)
@@ -182,8 +184,8 @@ pub fn to_writer<W: Write>(
 /// default encoder options.
 pub fn to_writer_default<W: Write>(
     writer: W,
-    tree: &RbxTree,
-    ids: &[RbxId],
+    tree: &WeakDom,
+    ids: &[Ref],
 ) -> Result<(), EncodeError> {
     encode_internal(writer, tree, ids, EncodeOptions::default())
 }

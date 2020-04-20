@@ -3,7 +3,7 @@ use std::{
     io::{self, Read, Write},
 };
 
-use rbx_dom_weak::RbxValueType;
+use rbx_dom_weak::types::VariantType;
 
 /// An error that can occur when deserializing an XML-format model or place.
 #[derive(Debug)]
@@ -85,12 +85,12 @@ pub(crate) enum DecodeErrorKind {
     },
     UnknownPropertyType(String),
     InvalidContent(&'static str),
-    NameMustBeString(RbxValueType),
+    NameMustBeString(VariantType),
     UnsupportedPropertyConversion {
         class_name: String,
         property_name: String,
-        expected_type: RbxValueType,
-        actual_type: RbxValueType,
+        expected_type: VariantType,
+        actual_type: VariantType,
     },
 }
 
@@ -229,12 +229,12 @@ pub(crate) enum EncodeErrorKind {
         class_name: String,
         property_name: String,
     },
-    UnsupportedPropertyType(RbxValueType),
+    UnsupportedPropertyType(VariantType),
     UnsupportedPropertyConversion {
         class_name: String,
         property_name: String,
-        expected_type: RbxValueType,
-        actual_type: RbxValueType,
+        expected_type: VariantType,
+        actual_type: VariantType,
     },
 }
 

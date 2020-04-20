@@ -1,7 +1,5 @@
 use std::io::{Read, Write};
 
-use rbx_dom_weak::RbxValue;
-
 use crate::{
     core::XmlType,
     deserializer_core::XmlEventReader,
@@ -9,29 +7,17 @@ use crate::{
     serializer_core::{XmlEventWriter, XmlWriteEvent},
 };
 
-pub struct BoolType;
-
-impl XmlType<bool> for BoolType {
+impl XmlType for bool {
     const XML_TAG_NAME: &'static str = "bool";
 
-    fn write_xml<W: Write>(
-        writer: &mut XmlEventWriter<W>,
-        name: &str,
-        value: &bool,
-    ) -> Result<(), EncodeError> {
-        writer.write(XmlWriteEvent::start_element(Self::XML_TAG_NAME).attr("name", name))?;
-
-        let value_as_str = if *value { "true" } else { "false" };
-
+    fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
+        let value_as_str = if *self { "true" } else { "false" };
         writer.write(XmlWriteEvent::characters(value_as_str))?;
-        writer.end_element()?;
 
         Ok(())
     }
 
-    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<RbxValue, DecodeError> {
-        reader.expect_start_with_name(Self::XML_TAG_NAME)?;
-
+    fn read_xml<R: Read>(reader: &mut XmlEventReader<R>) -> Result<Self, DecodeError> {
         let content = reader.read_characters()?;
 
         let value = match content.as_str() {
@@ -42,25 +28,21 @@ impl XmlType<bool> for BoolType {
             }
         };
 
-        reader.expect_end_with_name(Self::XML_TAG_NAME)?;
-
-        Ok(RbxValue::Bool { value })
+        Ok(value)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
-
     use crate::test_util;
 
     #[test]
     fn round_trip_true() {
-        test_util::test_xml_round_trip::<BoolType, _>(&true, RbxValue::Bool { value: true });
+        test_util::test_xml_round_trip(&true);
     }
 
     #[test]
     fn round_trip_false() {
-        test_util::test_xml_round_trip::<BoolType, _>(&false, RbxValue::Bool { value: false });
+        test_util::test_xml_round_trip(&false);
     }
 }
