@@ -48,6 +48,7 @@ impl Type {
             VariantType::String => Type::String,
             VariantType::BinaryString => Type::String,
             VariantType::Content => Type::String,
+            VariantType::Tags => Type::String,
 
             VariantType::Bool => Type::Bool,
             VariantType::Int32 => Type::Int32,

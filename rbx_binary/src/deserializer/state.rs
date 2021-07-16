@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet, VecDeque},
-    convert::TryInto,
+    convert::{TryFrom, TryInto},
     io::Read,
 };
 
@@ -9,7 +9,7 @@ use rbx_dom_weak::{
         Axes, BinaryString, BrickColor, CFrame, Color3, Color3uint8, ColorSequence,
         ColorSequenceKeypoint, Content, CustomPhysicalProperties, Enum, Faces, Matrix3,
         NumberRange, NumberSequence, NumberSequenceKeypoint, PhysicalProperties, Ray, Rect, Ref,
-        SharedString, UDim, UDim2, Variant, VariantType, Vector2, Vector3, Vector3int16,
+        SharedString, Tags, UDim, UDim2, Variant, VariantType, Vector2, Vector3, Vector3int16,
     },
     InstanceBuilder, WeakDom,
 };
@@ -315,11 +315,26 @@ impl<'a, R: Read> DeserializerState<'a, R> {
                         instance.builder.add_property(&canonical_name, value);
                     }
                 }
+                VariantType::Tags => {
+                    for referent in &type_info.referents {
+                        let instance = self.instances_by_ref.get_mut(referent).unwrap();
+                        let value = Tags::try_from(chunk.read_binary_string()?).map_err(|_| {
+                            InnerError::InvalidPropData {
+                                type_name: type_info.type_name.clone(),
+                                prop_name: prop_name.clone(),
+                                valid_value: "a list of valid null-delimited UTF-8 strings",
+                                actual_value: "invalid UTF-8".to_string(),
+                            }
+                        })?;
+
+                        instance.builder.add_property(&canonical_name, value);
+                    }
+                }
                 invalid_type => {
                     return Err(InnerError::PropTypeMismatch {
                         type_name: type_info.type_name.clone(),
                         prop_name,
-                        valid_type_names: "String, Content, or BinaryString",
+                        valid_type_names: "String, Content, Tags, or BinaryString",
                         actual_type_name: format!("{:?}", invalid_type),
                     });
                 }

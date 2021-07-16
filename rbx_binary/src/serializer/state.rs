@@ -15,6 +15,7 @@ use rbx_dom_weak::{
     },
     WeakDom,
 };
+
 use rbx_reflection::{ClassDescriptor, ClassTag, DataType};
 
 use crate::{
@@ -572,11 +573,15 @@ impl<'a, W: Write> SerializerState<'a, W> {
                                 Variant::BinaryString(value) => {
                                     chunk.write_binary_string(value.as_ref())?;
                                 }
+                                Variant::Tags(value) => {
+                                    let buf: Vec<u8> = value.into();
+                                    chunk.write_binary_string(buf.as_ref())?;
+                                }
                                 _ => {
                                     return type_mismatch(
                                         i,
                                         &rbx_value,
-                                        "String, Content, or BinaryString",
+                                        "String, Content, Tags, or BinaryString",
                                     );
                                 }
                             }
