@@ -1,7 +1,7 @@
 use crate::{
     Axes, BinaryString, BrickColor, CFrame, Color3, Color3uint8, ColorSequence, Content, Enum,
     Faces, NumberRange, NumberSequence, PhysicalProperties, Ray, Rect, Ref, Region3, Region3int16,
-    SharedString, UDim, UDim2, Vector2, Vector2int16, Vector3, Vector3int16,
+    SharedString, Tags, UDim, UDim2, Vector2, Vector2int16, Vector3, Vector3int16,
 };
 
 /// Reduces boilerplate from listing different values of Variant by wrapping
@@ -126,6 +126,7 @@ make_variant! {
     Vector3(Vector3),
     Vector3int16(Vector3int16),
     OptionalCFrame(Option<CFrame>),
+    Tags(Tags),
 }
 
 impl From<&'_ str> for Variant {
