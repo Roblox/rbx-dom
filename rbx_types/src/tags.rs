@@ -62,6 +62,9 @@ mod test {
     fn from_binary_string() {
         let value = b"ez\0pz".to_vec();
 
-        assert_eq!(*(Tags::decode(value).unwrap().as_slice()), vec!["ez", "pz"])
+        assert_eq!(
+            Tags::decode(value).unwrap().as_slice().to_vec(),
+            vec!["ez", "pz"]
+        )
     }
 }
