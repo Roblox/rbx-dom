@@ -5,7 +5,7 @@ Add:
     # Tags serialize as a \0-delimited BinaryString of the tags on the instance.
     Tags:
       DataType:
-        Value: BinaryString
+        Value: Tags
       Serialization:
         Type: Serializes
       Scriptability: Custom
