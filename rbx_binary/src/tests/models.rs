@@ -39,6 +39,7 @@ binary_tests! {
     ref_adjacent,
     ref_child,
     ref_parent,
+    tags,
     three_brickcolorvalues,
     three_color3values,
     three_intvalues,

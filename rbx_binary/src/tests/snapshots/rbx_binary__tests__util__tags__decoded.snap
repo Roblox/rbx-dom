@@ -1,0 +1,20 @@
+---
+source: rbx_binary/src/tests/util.rs
+expression: decoded_viewed
+
+---
+- referent: referent-0
+  name: Folder
+  class: Folder
+  properties:
+    AttributesSerialize:
+      BinaryString: ""
+    SourceAssetId:
+      Int64: -1
+    Tags:
+      Tags:
+        - Cool
+        - My
+        - Tags
+  children: []
+
