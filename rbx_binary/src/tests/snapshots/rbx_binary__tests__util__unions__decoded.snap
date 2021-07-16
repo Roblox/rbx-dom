@@ -127,7 +127,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     TopParamA:
       Float32: -0.5
     TopParamB:
@@ -270,7 +270,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     TopParamA:
       Float32: -0.5
     TopParamB:
@@ -413,7 +413,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     TopParamA:
       Float32: -0.5
     TopParamB:

@@ -18,7 +18,7 @@ expression: decoded_viewed
         - 0.4117647409439087
         - 0.6745098233222961
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       Float32: 0.0
     Visible:
@@ -40,7 +40,7 @@ expression: decoded_viewed
         - 0.4117647409439087
         - 0.6745098233222961
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       Float32: 0.0
     Visible:
@@ -63,7 +63,7 @@ expression: decoded_viewed
         - 0.4117647409439087
         - 0.6745098233222961
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       Float32: 0.0
     Visible:
@@ -87,7 +87,7 @@ expression: decoded_viewed
         - 0.4117647409439087
         - 0.6745098233222961
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       Float32: 0.0
     Visible:
@@ -110,7 +110,7 @@ expression: decoded_viewed
         - 0.4117647409439087
         - 0.6745098233222961
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       Float32: 0.0
     Visible:
@@ -132,7 +132,7 @@ expression: decoded_viewed
         - 0.4117647409439087
         - 0.6745098233222961
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       Float32: 0.0
     Visible:
@@ -155,7 +155,7 @@ expression: decoded_viewed
         - 0.4117647409439087
         - 0.6745098233222961
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       Float32: 0.0
     Visible:
@@ -177,7 +177,7 @@ expression: decoded_viewed
         - 0.4117647409439087
         - 0.6745098233222961
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       Float32: 0.0
     Visible:

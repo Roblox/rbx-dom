@@ -12,7 +12,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       Ray:
         origin:
@@ -33,7 +33,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       Ray:
         origin:

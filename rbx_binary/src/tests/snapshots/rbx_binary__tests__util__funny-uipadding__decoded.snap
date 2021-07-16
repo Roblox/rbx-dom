@@ -26,6 +26,6 @@ expression: decoded_viewed
         - -13.369999885559082
         - -42
     Tags:
-      BinaryString: ""
+      Tags: []
   children: []
 

@@ -107,7 +107,7 @@ expression: decoded_viewed
     Style:
       Enum: 0
     Tags:
-      BinaryString: ""
+      Tags: []
     TileSize:
       UDim2:
         - - 1.0
@@ -223,7 +223,7 @@ expression: decoded_viewed
     Style:
       Enum: 0
     Tags:
-      BinaryString: ""
+      Tags: []
     TileSize:
       UDim2:
         - - 1.0

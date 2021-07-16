@@ -33,7 +33,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       NumberSequence:
         keypoints:
@@ -83,7 +83,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       NumberSequence:
         keypoints:
@@ -127,7 +127,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     Transparency:
       NumberSequence:
         keypoints:

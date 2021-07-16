@@ -10,7 +10,7 @@ expression: decoded_viewed
     AttributesSerialize:
       BinaryString: ""
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       BrickColor: 1004
   children: []
@@ -21,7 +21,7 @@ expression: decoded_viewed
     AttributesSerialize:
       BinaryString: ""
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       BrickColor: 37
   children: []
@@ -32,7 +32,7 @@ expression: decoded_viewed
     AttributesSerialize:
       BinaryString: ""
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       BrickColor: 1010
   children: []

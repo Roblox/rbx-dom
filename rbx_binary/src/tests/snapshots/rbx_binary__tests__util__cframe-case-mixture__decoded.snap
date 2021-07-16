@@ -12,7 +12,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       CFrame:
         position:
@@ -39,7 +39,7 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       CFrame:
         position:

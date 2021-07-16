@@ -10,7 +10,7 @@ expression: decoded_viewed
     AttributesSerialize:
       BinaryString: ""
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       Int64: 1234567
   children: []
@@ -21,7 +21,7 @@ expression: decoded_viewed
     AttributesSerialize:
       BinaryString: ""
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       Int64: 1337
   children: []
@@ -32,7 +32,7 @@ expression: decoded_viewed
     AttributesSerialize:
       BinaryString: ""
     Tags:
-      BinaryString: ""
+      Tags: []
     Value:
       Int64: -7654321
   children: []
