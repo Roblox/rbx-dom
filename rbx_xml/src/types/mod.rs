@@ -26,6 +26,7 @@ mod rect;
 mod referent;
 mod shared_string;
 mod strings;
+mod tags;
 mod udims;
 mod vectors;
 
