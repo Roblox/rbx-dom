@@ -57,7 +57,8 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      Tags: []
+      Tags:
+        - ""
     WorldPivotData:
       OptionalCFrame: ~
   children: []
@@ -115,7 +116,8 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      Tags: []
+      Tags:
+        - ""
     WorldPivotData:
       OptionalCFrame:
         position:
@@ -187,7 +189,8 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      Tags: []
+      Tags:
+        - ""
     WorldPivotData:
       OptionalCFrame:
         position:

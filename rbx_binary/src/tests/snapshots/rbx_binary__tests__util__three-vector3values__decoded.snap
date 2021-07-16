@@ -12,7 +12,8 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      Tags: []
+      Tags:
+        - ""
     Value:
       Vector3:
         - 1337.0
@@ -28,7 +29,8 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      Tags: []
+      Tags:
+        - ""
     Value:
       Vector3:
         - 0.15625
@@ -44,7 +46,8 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      Tags: []
+      Tags:
+        - ""
     Value:
       Vector3:
         - .inf

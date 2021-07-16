@@ -107,7 +107,8 @@ expression: decoded_viewed
     Style:
       Enum: 0
     Tags:
-      Tags: []
+      Tags:
+        - ""
     TileSize:
       UDim2:
         - - 1.0
@@ -223,7 +224,8 @@ expression: decoded_viewed
     Style:
       Enum: 0
     Tags:
-      Tags: []
+      Tags:
+        - ""
     TileSize:
       UDim2:
         - - 1.0

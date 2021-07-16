@@ -46,7 +46,8 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      Tags: []
+      Tags:
+        - ""
     Texture:
       Content: ""
     TextureLength:
@@ -109,7 +110,8 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      Tags: []
+      Tags:
+        - ""
     Texture:
       Content: ""
     TextureLength:
@@ -177,7 +179,8 @@ expression: decoded_viewed
     SourceAssetId:
       Int64: -1
     Tags:
-      Tags: []
+      Tags:
+        - ""
     Texture:
       Content: ""
     TextureLength:

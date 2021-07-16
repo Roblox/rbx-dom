@@ -16,6 +16,7 @@ expression: decoded_viewed
     Source:
       String: "local module = {}\n\nreturn module\n"
     Tags:
-      Tags: []
+      Tags:
+        - ""
   children: []
 

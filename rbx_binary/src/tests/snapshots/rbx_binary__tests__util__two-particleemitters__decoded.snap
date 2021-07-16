@@ -82,7 +82,8 @@ expression: decoded_viewed
         - 0.0
         - 0.0
     Tags:
-      Tags: []
+      Tags:
+        - ""
     Texture:
       Content: "rbxasset://textures/particles/sparkles_main.dds"
     Transparency:
@@ -178,7 +179,8 @@ expression: decoded_viewed
         - 0.0
         - 0.0
     Tags:
-      Tags: []
+      Tags:
+        - ""
     Texture:
       Content: "rbxasset://textures/particles/sparkles_main.dds"
     Transparency:

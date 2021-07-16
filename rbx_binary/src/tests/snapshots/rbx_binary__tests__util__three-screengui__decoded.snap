@@ -21,7 +21,8 @@ expression: decoded_viewed
       Bool: true
     RootLocalizationTable: "null"
     Tags:
-      Tags: []
+      Tags:
+        - ""
     ZIndexBehavior:
       Enum: 1
   children: []
@@ -43,7 +44,8 @@ expression: decoded_viewed
       Bool: true
     RootLocalizationTable: "null"
     Tags:
-      Tags: []
+      Tags:
+        - ""
     ZIndexBehavior:
       Enum: 1
   children: []
@@ -65,7 +67,8 @@ expression: decoded_viewed
       Bool: true
     RootLocalizationTable: "null"
     Tags:
-      Tags: []
+      Tags:
+        - ""
     ZIndexBehavior:
       Enum: 1
   children: []

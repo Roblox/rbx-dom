@@ -32,7 +32,8 @@ expression: decoded_viewed
     StartCorner:
       Enum: 0
     Tags:
-      Tags: []
+      Tags:
+        - ""
     VerticalAlignment:
       Enum: 1
   children: []
@@ -65,7 +66,8 @@ expression: decoded_viewed
     StartCorner:
       Enum: 0
     Tags:
-      Tags: []
+      Tags:
+        - ""
     VerticalAlignment:
       Enum: 1
   children: []
@@ -98,7 +100,8 @@ expression: decoded_viewed
     StartCorner:
       Enum: 0
     Tags:
-      Tags: []
+      Tags:
+        - ""
     VerticalAlignment:
       Enum: 1
   children: []

@@ -35,7 +35,7 @@ chunks:
       prop_name: Tags
       prop_type: String
       values:
-        - "Cool\u0000My\u0000Tags\u0000"
+        - "Cool\u0000My\u0000Tags"
   - Prnt:
       version: 0
       links:

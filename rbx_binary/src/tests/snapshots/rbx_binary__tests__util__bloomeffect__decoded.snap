@@ -16,7 +16,8 @@ expression: decoded_viewed
     Size:
       Float32: 24.700000762939454
     Tags:
-      Tags: []
+      Tags:
+        - ""
     Threshold:
       Float32: 2.2850000858306886
   children: []
