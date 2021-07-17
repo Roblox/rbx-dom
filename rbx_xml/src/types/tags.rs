@@ -49,7 +49,7 @@ mod test {
     #[test]
     fn decode_tags() {
         test_util::test_xml_deserialize(
-            "<BinaryString name=\"foo\">TXkAQ29vbABUYWdz</BinaryString>",
+            "<Tags name=\"foo\">TXkAQ29vbABUYWdz</Tags>",
             &Tags::from(
                 vec!["My", "Cool", "Tags"]
                     .into_iter()
@@ -62,7 +62,7 @@ mod test {
     #[test]
     fn encode_tags() {
         test_util::test_xml_serialize(
-            "<BinaryString name=\"foo\"><![CDATA[TXkAQ29vbABUYWdz]]></BinaryString>",
+            "<Tags name=\"foo\"><![CDATA[TXkAQ29vbABUYWdz]]></Tags>",
             &Tags::from(
                 vec!["My", "Cool", "Tags"]
                     .into_iter()
