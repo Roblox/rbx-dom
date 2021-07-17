@@ -30,6 +30,7 @@ test_models! {
     ref_adjacent: "models/ref-adjacent",
     ref_child: "models/ref-child",
     ref_parent: "models/ref-parent",
+    tags: "models/tags",
     body_movers: "models/body-movers",
     union: "models/unions",
 

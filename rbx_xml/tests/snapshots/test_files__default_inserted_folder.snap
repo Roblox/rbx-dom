@@ -10,6 +10,7 @@ expression: viewer.view_children(&dom)
     AttributesSerialize:
       BinaryString: ""
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
   children: []
 

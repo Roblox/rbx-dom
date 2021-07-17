@@ -1,7 +1,11 @@
 # rbx_types Changelog
 
 ## Unreleased Changes
-* Implemented `From<Color3>` for `Color3uint8` and `From<Color3uint8>` for `Color3`.
+* Implemented `From<Color3>` for `Color3uint8` and `From<Color3uint8>` for `Color3`. ([#198][#198])
+* Implemented `Tags`. ([#199][#199])
+
+[#198]: https://github.com/rojo-rbx/rbx-dom/198
+[#199]: https://github.com/rojo-rbx/rbx-dom/199
 
 ## 1.1.0 (2021-07-02)
 * Critical fix: changed serde serialization of fields from PascalCase to camelCase. ([#191][#191])

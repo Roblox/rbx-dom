@@ -105,7 +105,8 @@ expression: viewer.view_children(&dom)
         - 1.0
         - 2.0
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
     TopParamA:
       Float32: -0.5
     TopParamB:
