@@ -1,6 +1,9 @@
 # rbx_binary Changelog
 
 ## Unreleased
+* Added support for reading `String` as `Tags`. [#199][pr-199]
+
+[pr-199]: https://github.com/rojo-rbx/rbx-dom/pull/199
 
 ## 0.6.1 (2021-07-02)
 * Upgraded to rbx\_dom\_weak 2.1.

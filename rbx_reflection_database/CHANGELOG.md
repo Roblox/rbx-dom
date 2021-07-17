@@ -1,6 +1,9 @@
 # rbx\_reflection_database Changelog
 
 ## Unreleased Changes
+* Changed type of `Instance.Tags` from `BinaryString` to `Tags`. [#199][pr-199]
+
+[pr-199]: https://github.com/rojo-rbx/rbx-dom/pull/199
 
 ## 0.2.1+roblox-484 (2021-07-02)
 * Updated to rbx_types 1.1.
