@@ -10,7 +10,7 @@ use crate::{
 };
 
 impl XmlType for Tags {
-    const XML_TAG_NAME: &'static str = "Tags";
+    const XML_TAG_NAME: &'static str = "BinaryString";
 
     fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
         // FIXME: BinaryString should have an is_empty method.
@@ -49,7 +49,7 @@ mod test {
     #[test]
     fn decode_tags() {
         test_util::test_xml_deserialize(
-            "<Tags name=\"foo\">TXkAQ29vbABUYWdz</Tags>",
+            "<BinaryString name=\"foo\">TXkAQ29vbABUYWdz</BinaryString>",
             &Tags::from(
                 vec!["My", "Cool", "Tags"]
                     .into_iter()
@@ -62,7 +62,7 @@ mod test {
     #[test]
     fn encode_tags() {
         test_util::test_xml_serialize(
-            "<Tags name=\"foo\"><![CDATA[TXkAQ29vbABUYWdz]]></Tags>",
+            "<BinaryString name=\"foo\"><![CDATA[TXkAQ29vbABUYWdz]]></BinaryString>",
             &Tags::from(
                 vec!["My", "Cool", "Tags"]
                     .into_iter()
