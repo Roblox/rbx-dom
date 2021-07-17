@@ -4,7 +4,7 @@
 use std::borrow::{Borrow, Cow};
 use std::convert::TryInto;
 
-use rbx_dom_weak::types::{BrickColor, Color3uint8, Variant, VariantType};
+use rbx_dom_weak::types::{BrickColor, Color3uint8, Tags, Variant, VariantType};
 
 pub trait ConvertVariant: Clone + Sized {
     fn try_convert(self, target_type: VariantType) -> Result<Self, String> {
@@ -40,6 +40,11 @@ impl ConvertVariant for Variant {
             (Variant::Color3(value), VariantType::Color3uint8) => {
                 Ok(Cow::Owned(Color3uint8::from(*value).into()))
             }
+            (Variant::BinaryString(value), VariantType::Tags) => Ok(Cow::Owned(
+                Tags::decode(value.to_owned().into_vec())
+                    .map_err(|_| format!("Tags contain invalid UTF-8"))?
+                    .into(),
+            )),
             (_, _) => Ok(value),
         }
     }
