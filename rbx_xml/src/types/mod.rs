@@ -28,7 +28,6 @@ mod shared_string;
 mod strings;
 mod tags;
 mod udims;
-
 mod vectors;
 
 use std::io::{Read, Write};
