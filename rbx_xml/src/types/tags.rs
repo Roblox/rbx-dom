@@ -10,7 +10,7 @@ use crate::{
 };
 
 impl XmlType for Tags {
-    const XML_TAG_NAME: &'static str = "BinaryString";
+    const XML_TAG_NAME: &'static str = "Tags";
 
     fn write_xml<W: Write>(&self, writer: &mut XmlEventWriter<W>) -> Result<(), EncodeError> {
         // FIXME: BinaryString should have an is_empty method.
