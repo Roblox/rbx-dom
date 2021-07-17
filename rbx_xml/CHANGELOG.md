@@ -1,8 +1,8 @@
 # rbx_xml Changelog
 
 ## Unreleased
-* Added conversion from `Color3` to `Color3uint8` to address [rojo-rbx/rojo#443](https://github.com/rojo-rbx/rojo/issues/443). [#198][pr-198]
-* Added support for reading `BinaryString` as `Tags`. [#199][pr-199]
+* Added conversion from `Color3` to `Color3uint8` to address [rojo-rbx/rojo#443](https://github.com/rojo-rbx/rojo/issues/443). ([#198][pr-198])
+* Added support for reading `BinaryString` as `Tags`. ([#199][pr-199])
 
 [pr-198]: https://github.com/rojo-rbx/rojo/issues/198
 [pr-199]: https://github.com/rojo-rbx/rojo/issues/199

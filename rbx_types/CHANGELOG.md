@@ -1,8 +1,8 @@
 # rbx_types Changelog
 
 ## Unreleased Changes
-* Implemented `From<Color3>` for `Color3uint8` and `From<Color3uint8>` for `Color3`. [#198][#198]
-* Implemented `Tags` [#199][#199].
+* Implemented `From<Color3>` for `Color3uint8` and `From<Color3uint8>` for `Color3`. ([#198][#198])
+* Implemented `Tags`. ([#199][#199])
 
 [#198]: https://github.com/rojo-rbx/rbx-dom/198
 [#199]: https://github.com/rojo-rbx/rbx-dom/199
