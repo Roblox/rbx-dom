@@ -10,7 +10,8 @@ expression: viewer.view_children(&dom)
     AttributesSerialize:
       BinaryString: ""
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
   children: []
 - referent: referent-1
   name: Value
@@ -19,7 +20,8 @@ expression: viewer.view_children(&dom)
     AttributesSerialize:
       BinaryString: ""
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
     Value: referent-0
   children: []
 

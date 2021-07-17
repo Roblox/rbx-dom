@@ -22,7 +22,8 @@ expression: viewer.view_children(&dom)
     P:
       Float32: 1250.0
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
   children: []
 - referent: referent-1
   name: BodyForce
@@ -36,7 +37,8 @@ expression: viewer.view_children(&dom)
         - 1.0
         - 0.0
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
   children: []
 - referent: referent-2
   name: BodyGyro
@@ -70,7 +72,8 @@ expression: viewer.view_children(&dom)
     P:
       Float32: 3000.0
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
   children: []
 - referent: referent-3
   name: BodyPosition
@@ -93,7 +96,8 @@ expression: viewer.view_children(&dom)
         - 50.0
         - 0.0
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
   children: []
 - referent: referent-4
   name: BodyThrust
@@ -112,7 +116,8 @@ expression: viewer.view_children(&dom)
         - 0.0
         - 0.0
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
   children: []
 - referent: referent-5
   name: BodyVelocity
@@ -128,7 +133,8 @@ expression: viewer.view_children(&dom)
     P:
       Float32: 1250.0
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
     Velocity:
       Vector3:
         - 0.0

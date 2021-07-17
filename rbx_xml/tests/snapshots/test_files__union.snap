@@ -112,7 +112,8 @@ expression: viewer.view_children(&dom)
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
     TopParamA:
       Float32: -0.5
     TopParamB:
@@ -240,7 +241,8 @@ expression: viewer.view_children(&dom)
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
     TopParamA:
       Float32: -0.5
     TopParamB:
@@ -368,7 +370,8 @@ expression: viewer.view_children(&dom)
     SourceAssetId:
       Int64: -1
     Tags:
-      BinaryString: ""
+      Tags:
+        - ""
     TopParamA:
       Float32: -0.5
     TopParamB:
