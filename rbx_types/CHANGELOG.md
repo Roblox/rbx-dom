@@ -1,6 +1,7 @@
 # rbx_types Changelog
 
 ## Unreleased Changes
+* Added an `Attributes` struct to facilitate reading and writing of attribute values.
 
 ## 1.2.0 (2021-07-19)
 * Implemented `From<Color3>` for `Color3uint8` and `From<Color3uint8>` for `Color3`. ([#198][#198])
